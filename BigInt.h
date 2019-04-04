@@ -15,15 +15,33 @@ private:
 
 public:
     BigInt();
+    BigInt(BigInt&);
     BigInt(std::string);
     BigInt(int);
+
+    static void trimString(std::string&);
     static bool checkString(std::string);
+
     int getLength();
     int getSize();
+    int* getValue();
+
     void setValue(std::string);
     void setValue(int);
-    int* getValue();
+
+    void appendValue(int);
+
     std::string toString();
+
+    BigInt& operator+=(const BigInt& right);
+    BigInt operator+(const BigInt& right);
+
+    bool operator==(const BigInt& right);
+    bool operator!=(const BigInt& right);
+    bool operator> (const BigInt& right);
+    bool operator< (const BigInt& right);
+    bool operator>=(const BigInt& right);
+    bool operator<=(const BigInt& right);
 };
 
 
