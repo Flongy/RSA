@@ -20,11 +20,12 @@ BigInt::BigInt(int s) {
 
 bool BigInt::checkString(string s) {
     // Проверка строки на содержание символов, которые не являются цифрами
-    for(char c:s) {
+    if (s[0] == '-')
+        return false;           // TODO: сделать знаковый BigInt?
+    for(char c:s)
         if (!isdigit(c))
-            return false;
-    }
-    return true;
+            return false;       // вернуть false, если в строке есть нецифровой символ
+    return true;                // вернуть true, если в строке задано число
 }
 
 int BigInt::getLength() {

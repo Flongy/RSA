@@ -25,4 +25,9 @@ void test_BigInt() {
     if(testBI.toString().compare("123456789123456789123456789") != 0) {
         cout<<"BigInt::setValue() не прошел тест"<<endl;
     }
+    /* TODO: сделать знаковый BigInt?
+     * testBI.setValue("-10");
+    if(testBI.toString().compare("-10") != 0) {
+        cout<<"BigInt::setValue() не прошел тест"<<endl;
+    }*/
 }
