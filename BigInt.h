@@ -42,6 +42,9 @@ public:
     bool operator< (const BigInt& right);
     bool operator>=(const BigInt& right);
     bool operator<=(const BigInt& right);
+
+    friend std::ostream& operator<<(std::ostream&, BigInt& bigInt);
+    friend std::istream& operator>>(std::istream&, BigInt& bigInt);
 };
 
 

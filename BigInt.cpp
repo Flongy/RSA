@@ -185,6 +185,7 @@ bool BigInt::operator>=(const BigInt &right) {
             return false;
     return true;
 }
+
 bool BigInt::operator<=(const BigInt &right) {
     if (length < right.length)
         return true;
@@ -196,4 +197,17 @@ bool BigInt::operator<=(const BigInt &right) {
         else if(value[i] > right.value[i])
             return false;
     return true;
+}
+
+ostream& operator<<(ostream& os, BigInt& bigInt) {
+    // Вывод BigInt в поток
+    return os << bigInt.toString();
+}
+
+istream& operator>>(istream& is, BigInt& bigInt) {
+    // Ввод нового BigInt из потока
+    string s;
+    is >> s;
+    bigInt.setValue(s);
+    return is;
 }
