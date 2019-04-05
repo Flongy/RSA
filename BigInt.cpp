@@ -11,9 +11,7 @@ using namespace std;
 BigInt::BigInt() {}
 
 BigInt::BigInt(BigInt& bigInt) {
-    length = bigInt.length;
-    size = bigInt.size;
-    value = bigInt.value;
+    setValue(bigInt);
 }
 
 BigInt::BigInt(string s) {
@@ -75,6 +73,13 @@ void BigInt::setValue(int s) {
     setValue(to_string(s));
 }
 
+void BigInt::setValue(BigInt bigInt) {
+    // Записать в value новое значение (BigInt)
+    length = bigInt.length;
+    size = bigInt.size;
+    value = bigInt.value;
+}
+
 int* BigInt::getValue() {
     // Вывести массив value
     return value;
@@ -116,6 +121,21 @@ string BigInt::toString() {
     return result;
 }
 
+BigInt BigInt::operator=(BigInt right) {
+    setValue(right);
+    return *this;
+}
+
+BigInt BigInt::operator=(const std::string right) {
+    setValue(right);
+    return *this;
+}
+
+BigInt BigInt::operator=(const int right) {
+    setValue(right);
+    return *this;
+}
+
 BigInt& BigInt::operator+=(const BigInt& right) {
     for(int i = 0; i < min(size, right.size); i++) {
         value[i] += right.value[i];
@@ -134,6 +154,29 @@ BigInt BigInt::operator+(const BigInt &right) {
     return BigInt(*this) += right;
 }
 
+BigInt& BigInt::operator+=(const string right) {
+    *this += BigInt(right);
+    return *this;
+}
+
+BigInt BigInt::operator+(const string right) {
+    return BigInt(*this) += BigInt(right);
+}
+
+BigInt& BigInt::operator+=(const int right) {
+    *this += BigInt(right);
+    return *this;
+}
+
+BigInt BigInt::operator+(const int right) {
+    return BigInt(*this) += BigInt(right);
+}
+
+BigInt BigInt::operator++() {
+    *this += 1;
+    return *this;
+}
+
 bool BigInt::operator==(const BigInt &right) {
     if (length != right.length)
         return false;
@@ -143,7 +186,23 @@ bool BigInt::operator==(const BigInt &right) {
     return true;
 }
 
+bool BigInt::operator==(const string right) {
+    return *this == BigInt(right);
+}
+
+bool BigInt::operator==(const int right) {
+    return *this == BigInt(right);
+}
+
 bool BigInt::operator!=(const BigInt &right) {
+    return !(*this == right);
+}
+
+bool BigInt::operator!=(const string right) {
+    return !(*this == right);
+}
+
+bool BigInt::operator!=(const int right) {
     return !(*this == right);
 }
 
@@ -160,6 +219,14 @@ bool BigInt::operator> (const BigInt &right) {
     return false;
 }
 
+bool BigInt::operator> (const string right) {
+    return *this > BigInt(right);
+}
+
+bool BigInt::operator> (const int right) {
+    return *this > BigInt(right);
+}
+
 bool BigInt::operator< (const BigInt &right) {
     if (length < right.length)
         return true;
@@ -171,6 +238,14 @@ bool BigInt::operator< (const BigInt &right) {
         else if(value[i] > right.value[i])
             return false;
     return false;
+}
+
+bool BigInt::operator< (const string right) {
+    return *this < BigInt(right);
+}
+
+bool BigInt::operator< (const int right) {
+    return *this < BigInt(right);
 }
 
 bool BigInt::operator>=(const BigInt &right) {
@@ -186,6 +261,14 @@ bool BigInt::operator>=(const BigInt &right) {
     return true;
 }
 
+bool BigInt::operator>=(const string right) {
+    return *this >= BigInt(right);
+}
+
+bool BigInt::operator>=(const int right) {
+    return *this >= BigInt(right);
+}
+
 bool BigInt::operator<=(const BigInt &right) {
     if (length < right.length)
         return true;
@@ -197,6 +280,14 @@ bool BigInt::operator<=(const BigInt &right) {
         else if(value[i] > right.value[i])
             return false;
     return true;
+}
+
+bool BigInt::operator<=(const string right) {
+    return *this <= BigInt(right);
+}
+
+bool BigInt::operator<=(const int right) {
+    return *this <= BigInt(right);
 }
 
 ostream& operator<<(ostream& os, BigInt& bigInt) {

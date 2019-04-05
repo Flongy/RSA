@@ -136,6 +136,14 @@ void test_BigInt() {
     if((testBI == testBIRight))
         cout << "BigInt::operator==() не прошел тест на значениях 10000 == 9000" << endl << "Результат: " << (testBI == testBIRight) << endl;
 
+    testBI.setValue(10000);
+    if(!(testBI == "10000"))
+        cout << "BigInt::operator==() не прошел тест на значениях 10000 == (string) 10000" << endl << "Результат: " << (testBI == "10000") << endl;
+
+    testBI.setValue(10000);
+    if(!(testBI == 10000))
+        cout << "BigInt::operator==() не прошел тест на значениях 10000 == (int) 10000" << endl << "Результат: " << (testBI == 10000) << endl;
+
 
     //test operator!=
     testBI.setValue(100);
@@ -162,6 +170,14 @@ void test_BigInt() {
     testBIRight.setValue(9000);
     if(!(testBI != testBIRight))
         cout << "BigInt::operator!=() не прошел тест на значениях 10000 != 9000" << endl << "Результат: " << (testBI != testBIRight) << endl;
+
+    testBI.setValue(10000);
+    if(!(testBI != "9000"))
+        cout << "BigInt::operator!=() не прошел тест на значениях 10000 != (string) 9000" << endl << "Результат: " << (testBI != "9000") << endl;
+
+    testBI.setValue(10000);
+    if(!(testBI != 9000))
+        cout << "BigInt::operator!=() не прошел тест на значениях 10000 != (int) 9000" << endl << "Результат: " << (testBI != 9000) << endl;
 
 
     //test operator>
@@ -190,6 +206,10 @@ void test_BigInt() {
     if(!(testBI > testBIRight))
         cout << "BigInt::operator>() не прошел тест на значениях 10000 > 9000" << endl << "Результат: " << (testBI > testBIRight) << endl;
 
+    testBI.setValue(10000);
+    if(!(testBI > 9000))
+        cout << "BigInt::operator>() не прошел тест на значениях 10000 > (int) 9000" << endl << "Результат: " << (testBI > 9000) << endl;
+
 
     //test operator<
     testBI.setValue(100);
@@ -216,6 +236,14 @@ void test_BigInt() {
     testBIRight.setValue(9000);
     if((testBI < testBIRight))
         cout << "BigInt::operator<() не прошел тест на значениях 10000 < 9000" << endl << "Результат: " << (testBI < testBIRight) << endl;
+
+    testBI.setValue(9000);
+    if(!(testBI < "10000"))
+        cout << "BigInt::operator<() не прошел тест на значениях 9000 < (string) 10000" << endl << "Результат: " << (testBI < "10000") << endl;
+
+    testBI.setValue(9000);
+    if(!(testBI < 10000))
+        cout << "BigInt::operator<() не прошел тест на значениях 9000 < (int) 10000" << endl << "Результат: " << (testBI < 10000) << endl;
 
 
     //test operator>=
@@ -244,6 +272,14 @@ void test_BigInt() {
     if(!(testBI >= testBIRight))
         cout << "BigInt::operator>=() не прошел тест на значениях 10000 >= 9000" << endl << "Результат: " << (testBI >= testBIRight) << endl;
 
+    testBI.setValue(10000);
+    if(!(testBI >= "10000"))
+        cout << "BigInt::operator>=() не прошел тест на значениях 10000 >= (string) 10000" << endl << "Результат: " << (testBI >= "10000") << endl;
+
+    testBI.setValue(10000);
+    if(!(testBI >= 10000))
+        cout << "BigInt::operator>=() не прошел тест на значениях 10000 >= (int) 10000" << endl << "Результат: " << (testBI >= 10000) << endl;
+
 
     //test operator<=
     testBI.setValue(100);
@@ -270,4 +306,25 @@ void test_BigInt() {
     testBIRight.setValue(9000);
     if((testBI <= testBIRight))
         cout << "BigInt::operator<=() не прошел тест на значениях 10000 <= 9000" << endl << "Результат: " << (testBI <= testBIRight) << endl;
+
+    testBI.setValue(10000);
+    if((testBI <= "10000"))
+        cout << "BigInt::operator<=() не прошел тест на значениях 10000 <= (string) 10000" << endl << "Результат: " << (testBI <= "10000") << endl;
+
+    testBI.setValue(10000);
+    if((testBI <= 10000))
+        cout << "BigInt::operator<=() не прошел тест на значениях 10000 <= (int) 10000" << endl << "Результат: " << (testBI <= 10000) << endl;
+
+    // test operator=
+    testBI = BigInt("1234");
+    if(testBI != 1234)
+        cout << "BigInt::operator=() не прошел тест на значении (BigInt) 1234" << endl << testBI << endl;
+
+    testBI = "1234";
+    if(testBI != 1234)
+        cout << "BigInt::operator=() не прошел тест на значении (string) 1234" << endl << testBI << endl;
+
+    testBI = 1234;
+    if(testBI != 1234)
+        cout << "BigInt::operator=() не прошел тест на значении (int) 1234" << endl << testBI << endl;
 }
