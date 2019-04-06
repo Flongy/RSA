@@ -27,35 +27,35 @@ void test_BigInt() {
 
     //test setValue() и toString()
     testBI.setValue("0");
-    if(testBI.toString().compare("0") != 0)
+    if(testBI != "0")
         cout << "BigInt::setValue() или toString() не прошел тест на значении 0" << endl << "BigInt = "<< testBI.toString() << endl;
 
     testBI.setValue("1234");
-    if(testBI.toString().compare("1234") != 0)
+    if(testBI != "1234")
         cout << "BigInt::setValue() или toString() не прошел тест на значении 1234" << endl << "BigInt = "<< testBI.toString() << endl;
 
     testBI.setValue("123456789123456789123456789");
-    if(testBI.toString().compare("123456789123456789123456789") != 0)
+    if(testBI != "123456789123456789123456789")
         cout << "BigInt::setValue() или toString() не прошел тест на значении 123456789123456789123456789" << endl << "BigInt = "<< testBI.toString() << endl;
 
     testBI.setValue("10000200003000040000");
-    if(testBI.toString().compare("10000200003000040000") != 0)
+    if(testBI != "10000200003000040000")
         cout << "BigInt::setValue() или toString() не прошел тест на значении 10000200003000040000" << endl << "BigInt = "<< testBI.toString() << endl;
 
     testBI.setValue("10000");
-    if(testBI.toString().compare("10000") != 0)
+    if(testBI != "10000")
         cout << "BigInt::setValue() или toString() не прошел тест на значении 10000" << endl << "BigInt = "<< testBI.toString() << endl;
 
     testBI.setValue("10100");
-    if(testBI.toString().compare("10100") != 0)
+    if(testBI != "10100")
         cout << "BigInt::setValue() или toString() не прошел тест на значении 10100" << endl << "BigInt = "<< testBI.toString() << endl;
 
     testBI.setValue("5 0000");
-    if(testBI.toString().compare("50000") != 0)
+    if(testBI != "50000")
         cout << "BigInt::setValue() или toString() не прошел тест на значении 5 0000" << endl << "BigInt = "<< testBI.toString() << endl;
 
     testBI.setValue("5,000");
-    if(testBI.toString().compare("5000") != 0)
+    if(testBI != "5000")
         cout << "BigInt::setValue() или toString() не прошел тест на значении 5,000" << endl << "BigInt = "<< testBI.toString() << endl;
 
     /* TODO: сделать знаковый BigInt?
@@ -65,49 +65,76 @@ void test_BigInt() {
     }*/
 
 
-    //test append()
+    //test appendValue()
     testBI.setValue(100);
     testBI.appendValue(1);
-    if(testBI.toString().compare("10100") != 0)
+    cout << testBI << "; " << (testBI == "10100") << "; " << true << endl;
+    if(testBI != "10100")
         cout << "BigInt::appendValue() не прошел тест на значениях 100, 1" << endl << "BigInt = " << testBI.toString() << endl;
 
     testBI.setValue(1000);
     testBI.appendValue(101000);
-    if(testBI.toString().compare("1010001000") != 0)
+    if(testBI != "1010001000")
         cout << "BigInt::appendValue() не прошел тест на значениях 1000, 101000" << endl << "BigInt = " << testBI.toString() << endl;
 
+    //test copyValue()
+    testBI = 100;
+    if(BigInt::copyValue(testBI.getValue(), testBI.getSize())[0] != 100)
+        cout << "BigInt::copyValue() не прошел тест" << endl;
 
     //test operator+=
     testBI.setValue(100);
     testBIRight.setValue(100);
     testBI += testBIRight;
-    if(testBI.toString().compare("200") != 0)
+    if(testBI != "200")
         cout << "BigInt::operator+=() не прошел тест на значениях 100 += 100" << endl << "BigInt = " << testBI.toString() << endl;
 
     testBI.setValue(9000);
     testBIRight.setValue(1000);
     testBI += testBIRight;
-    if(testBI.toString().compare("10000") != 0 || testBI.getSize() != 2)
+    if(testBI != "10000" || testBI.getSize() != 2)
         cout << "BigInt::operator+=() не прошел тест на значениях 9000 += 1000" << endl << "BigInt = " << testBI.toString() << endl;
 
     testBI.setValue(99999999);
     testBIRight.setValue(99999999);
     testBI += testBIRight;
-    if(testBI.toString().compare("199999998") != 0 || testBI.getSize() != 3)
+    if(testBI != "199999998" || testBI.getSize() != 3)
         cout << "BigInt::operator+=() не прошел тест на значениях 99999999 += 99999999" << endl << "BigInt = " << testBI.toString() << endl;
 
     testBI.setValue(50000);
     testBIRight.setValue(6700);
     testBI += testBIRight;
-    if(testBI.toString().compare("56700") != 0 || testBI.getSize() != 2)
+    if(testBI != "56700" || testBI.getSize() != 2)
         cout << "BigInt::operator+=() не прошел тест на значениях 50000 += 6700" << endl << "BigInt = " << testBI.toString() << endl;
 
 
     //test operator+
     testBI.setValue(120);
     testBIRight.setValue(640);
-    if((testBI + testBIRight).toString().compare("760") != 0 && testBI.toString().compare("120") && testBIRight.toString().compare("640"))
-        cout << "BigInt::operator+() не прошел тест на значениях 120 + 640" << endl << "BigInt = " << (testBI + testBIRight).toString() << endl;
+    if((testBI + testBIRight) != "760" || testBI != "120" || testBIRight != "640")
+        cout << "BigInt::operator+() не прошел тест на значениях 120 + 640" << endl << testBI << " + " << testBIRight <<  " = " << (testBI + testBIRight).toString() << endl;
+
+    testBI.setValue(15000);
+    testBIRight.setValue(5000);
+    if((testBI + testBIRight) != 20000 || (testBI + testBIRight).getSize() != 2 || (testBI + testBIRight).getLength() != 5 || testBI != "15000" || testBIRight != "5000")
+        cout << "BigInt::operator+() не прошел тест на значениях 15000 + 5000" << endl << testBI << " + " << testBIRight <<  " = " << (testBI + testBIRight).toString() << endl;
+
+    testBI.setValue(5000);
+    testBIRight.setValue(5000);
+    if((testBI + testBIRight) != 10000 || (testBI + testBIRight).getSize() != 2 || (testBI + testBIRight).getLength() != 5 || testBI != "5000" || testBIRight != "5000")
+        cout << "BigInt::operator+() не прошел тест на значениях 5000 + 5000" << endl << testBI << " + " << testBIRight <<  " = " << (testBI + testBIRight).toString() << endl;
+
+
+    //test operator++
+    testBI = 10;
+    testBI++;
+    if(testBI != 11)
+        cout<< "BigInt::operator++(int) не прошел тест" << endl << "BigInt = " << testBI << endl;
+
+    testBI = 10;
+    ++testBI;
+    if(testBI != 11)
+        cout<< "BigInt::operator++() не прошел тест" << endl << "BigInt = " << testBI << endl;
 
 
     //test operator==

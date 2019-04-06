@@ -5,17 +5,18 @@
 #include "BigInt.h"
 #include <string>
 #include <iostream>
+#include <utility>
 
 using namespace std;
 
-BigInt::BigInt() {}
+BigInt::BigInt() = default;
 
 BigInt::BigInt(BigInt& bigInt) {
     setValue(bigInt);
 }
 
 BigInt::BigInt(string s) {
-    setValue(s);
+    setValue(std::move(s));
 }
 
 BigInt::BigInt(int s) {
@@ -55,7 +56,7 @@ void BigInt::setValue(string s) {
     if (!checkString(s)) {
         cout<<"Указаная строка содержит символ, не являющийся цифрой"<<endl;
     } else {
-        length = s.length();
+        length = (int) s.length();
         size = length % 4 == 0 ? length/4 : length/4 + 1;                       // Расчет количества ячеек для value так, чтобы число поместилось целиком
         value = new int[size];
         for(int i = 0; i < size; i++) {
@@ -73,16 +74,25 @@ void BigInt::setValue(int s) {
     setValue(to_string(s));
 }
 
-void BigInt::setValue(BigInt bigInt) {
+void BigInt::setValue(BigInt& bigInt) {
     // Записать в value новое значение (BigInt)
     length = bigInt.length;
     size = bigInt.size;
-    value = bigInt.value;
+    delete [] value;
+    value = copyValue(bigInt.value, size);
 }
 
 int* BigInt::getValue() {
     // Вывести массив value
     return value;
+}
+
+int* BigInt::copyValue(const int *value, int size) {
+    // Копирование value
+    auto *newValue = new int[size];         // новый массив
+    for (int i = 0; i < size; i++)
+        newValue[i] = value[i];             // копирование старых значений
+    return newValue;
 }
 
 void BigInt::appendValue(int number) {
@@ -92,18 +102,23 @@ void BigInt::appendValue(int number) {
         appendValue(number / 10000);
     } else {
         size++;
-        int *newValue = new int[size];          // новый массив
+        auto *newValue = new int[size];         // новый массив
         for (int i = 0; i < size - 1; i++)
             newValue[i] = value[i];             // копирование старых значений
         newValue[size - 1] = number;            // добавление новой ячейки
         delete[] value;
         value = newValue;                       // замена
+        // Запись новой длины
+        length = (size - 1) * 4;
+        while (number != 0) { number /= 10; length++; }
     }
 }
 
+
+
 string BigInt::toString() {
     // Вывод числа в виде string
-    string result = "";
+    string result;
     for (int i = 0; i < size; i++) {
         // Проверка, если в ячейке число имеет меньше четырех цифр,
         // добавление дополнительных нулей в string запись при необходимости
@@ -121,17 +136,17 @@ string BigInt::toString() {
     return result;
 }
 
-BigInt BigInt::operator=(BigInt right) {
+BigInt& BigInt::operator=(BigInt right) {
     setValue(right);
     return *this;
 }
 
-BigInt BigInt::operator=(const std::string right) {
+BigInt& BigInt::operator=(const std::string right) {
     setValue(right);
     return *this;
 }
 
-BigInt BigInt::operator=(const int right) {
+BigInt& BigInt::operator=(const int right) {
     setValue(right);
     return *this;
 }
@@ -151,30 +166,34 @@ BigInt& BigInt::operator+=(const BigInt& right) {
 }
 
 BigInt BigInt::operator+(const BigInt &right) {
-    return BigInt(*this) += right;
+    return (BigInt) (BigInt(*this) += right);
 }
 
-BigInt& BigInt::operator+=(const string right) {
+BigInt& BigInt::operator+=(string right) {
+    return *this += BigInt(std::move(right));
+}
+
+BigInt BigInt::operator+(string right) {
+    return (BigInt) (BigInt(*this) += BigInt(std::move(right)));
+}
+
+BigInt& BigInt::operator+=(int right) {
     *this += BigInt(right);
     return *this;
 }
 
-BigInt BigInt::operator+(const string right) {
-    return BigInt(*this) += BigInt(right);
+BigInt BigInt::operator+(int right) {
+    return (BigInt) (BigInt(*this) += BigInt(right));
 }
 
-BigInt& BigInt::operator+=(const int right) {
-    *this += BigInt(right);
-    return *this;
+BigInt& BigInt::operator++() {
+    return *this += 1;
 }
 
-BigInt BigInt::operator+(const int right) {
-    return BigInt(*this) += BigInt(right);
-}
-
-BigInt BigInt::operator++() {
-    *this += 1;
-    return *this;
+BigInt BigInt::operator++(int) {
+    BigInt temp = BigInt(*this);
+    ++*this;
+    return (BigInt) temp;
 }
 
 bool BigInt::operator==(const BigInt &right) {
@@ -186,24 +205,29 @@ bool BigInt::operator==(const BigInt &right) {
     return true;
 }
 
-bool BigInt::operator==(const string right) {
-    return *this == BigInt(right);
+bool BigInt::operator==(string right) {
+    return *this == BigInt(std::move(right));
 }
 
-bool BigInt::operator==(const int right) {
+bool BigInt::operator==(int right) {
     return *this == BigInt(right);
 }
 
 bool BigInt::operator!=(const BigInt &right) {
-    return !(*this == right);
+    if (length != right.length)
+        return true;
+    for (int i = 0; i < size; i++)
+        if (value[i] != right.value[i])
+            return true;
+    return false;
 }
 
-bool BigInt::operator!=(const string right) {
-    return !(*this == right);
+bool BigInt::operator!=(string right) {
+    return *this != BigInt(std::move(right));
 }
 
-bool BigInt::operator!=(const int right) {
-    return !(*this == right);
+bool BigInt::operator!=(int right) {
+    return *this != BigInt(right);
 }
 
 bool BigInt::operator> (const BigInt &right) {
@@ -219,11 +243,11 @@ bool BigInt::operator> (const BigInt &right) {
     return false;
 }
 
-bool BigInt::operator> (const string right) {
-    return *this > BigInt(right);
+bool BigInt::operator> (string right) {
+    return *this > BigInt(std::move(right));
 }
 
-bool BigInt::operator> (const int right) {
+bool BigInt::operator> (int right) {
     return *this > BigInt(right);
 }
 
@@ -240,11 +264,11 @@ bool BigInt::operator< (const BigInt &right) {
     return false;
 }
 
-bool BigInt::operator< (const string right) {
-    return *this < BigInt(right);
+bool BigInt::operator< (string right) {
+    return *this < BigInt(std::move(right));
 }
 
-bool BigInt::operator< (const int right) {
+bool BigInt::operator< (int right) {
     return *this < BigInt(right);
 }
 
@@ -261,11 +285,11 @@ bool BigInt::operator>=(const BigInt &right) {
     return true;
 }
 
-bool BigInt::operator>=(const string right) {
-    return *this >= BigInt(right);
+bool BigInt::operator>=(string right) {
+    return *this >= BigInt(std::move(right));
 }
 
-bool BigInt::operator>=(const int right) {
+bool BigInt::operator>=(int right) {
     return *this >= BigInt(right);
 }
 
@@ -282,11 +306,11 @@ bool BigInt::operator<=(const BigInt &right) {
     return true;
 }
 
-bool BigInt::operator<=(const string right) {
-    return *this <= BigInt(right);
+bool BigInt::operator<=(string right) {
+    return *this <= BigInt(std::move(right));
 }
 
-bool BigInt::operator<=(const int right) {
+bool BigInt::operator<=(int right) {
     return *this <= BigInt(right);
 }
 

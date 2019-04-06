@@ -15,10 +15,10 @@ private:
     /* Пример: BigInt("123456789") => value[2]:1 value[1]:2345 value[0]:6789 */
 
 public:
-    BigInt();
-    BigInt(BigInt&);
-    BigInt(std::string);
-    BigInt(int);
+    explicit BigInt();
+    explicit BigInt(BigInt&);
+    explicit BigInt(std::string);
+    explicit BigInt(int);
 
     static void trimString(std::string&);                   // Удалить символы "удобной записи"
     static bool checkString(std::string);                   // Проверить строку на пригодность (является ли числом)
@@ -29,23 +29,26 @@ public:
 
     void setValue(std::string);                             // Записать через string
     void setValue(int);                                     // Записать через int
-    void setValue(BigInt);                                  // Записать через BigInt
+    void setValue(BigInt&);                                  // Записать через BigInt
 
+    static int* copyValue(const int*, int);
     void appendValue(int);
+    //void removeValue(int);
 
     std::string toString();
 
-    BigInt operator=(const BigInt right);                   // Оператор присваивания из BigInt
-    BigInt operator=(const std::string right);              // Оператор присваивания из string
-    BigInt operator=(const int right);                      // Оператор присваивания из int
+    BigInt& operator=(BigInt right);                        // Оператор присваивания из BigInt
+    BigInt& operator=(std::string right);                   // Оператор присваивания из string
+    BigInt& operator=(int right);                           // Оператор присваивания из int
 
     BigInt& operator+=(const BigInt& right);                // Прибавить к текущему другой BigInt
     BigInt operator+(const BigInt& right);                  // Сложение двух BigInt
-    BigInt& operator+=(const std::string right);            // Прибавить к текущему другой BigInt (через string)
-    BigInt operator+(const std::string right);              // Сложение BigInt и string -> BigInt
-    BigInt& operator+=(const int right);                    // Прибавить к текущему другой BigInt (через int)
-    BigInt operator+(const int right);                      // Сложение BigInt и int -> Bigint
-    BigInt operator++();                                    // Инкремент
+    BigInt& operator+=(std::string right);                  // Прибавить к текущему другой BigInt (через string)
+    BigInt operator+(std::string right);                    // Сложение BigInt и string -> BigInt
+    BigInt& operator+=(int right);                          // Прибавить к текущему другой BigInt (через int)
+    BigInt operator+(int right);                            // Сложение BigInt и int -> Bigint
+    BigInt& operator++();                                   // Префиксный инкремент
+    BigInt operator++(int);                                 // Постфиксный инкремент
 
     /* TODO: Вычитание
     BigInt& operator-=(const BigInt& right);
@@ -65,20 +68,20 @@ public:
     bool operator<=(const BigInt& right);
 
     // Операторы сравнения со string
-    bool operator==(const std::string right);
-    bool operator!=(const std::string right);
-    bool operator> (const std::string right);
-    bool operator< (const std::string right);
-    bool operator>=(const std::string right);
-    bool operator<=(const std::string right);
+    bool operator==(std::string right);
+    bool operator!=(std::string right);
+    bool operator> (std::string right);
+    bool operator< (std::string right);
+    bool operator>=(std::string right);
+    bool operator<=(std::string right);
 
     // Операторы сравнения с int
-    bool operator==(const int right);
-    bool operator!=(const int right);
-    bool operator> (const int right);
-    bool operator< (const int right);
-    bool operator>=(const int right);
-    bool operator<=(const int right);
+    bool operator==(int right);
+    bool operator!=(int right);
+    bool operator> (int right);
+    bool operator< (int right);
+    bool operator>=(int right);
+    bool operator<=(int right);
 
     // Операторы работы с потоками
     friend std::ostream& operator<<(std::ostream&, BigInt& bigInt);
