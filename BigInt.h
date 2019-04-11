@@ -6,6 +6,7 @@
 #define RSA_BIGINT_H
 
 #include <string>
+#include <vector>
 
 class BigInt {
 private:
@@ -15,13 +16,14 @@ private:
     /* Пример: BigInt("123456789") => value[2]:1 value[1]:2345 value[0]:6789 */
 
 public:
-    explicit BigInt();
-    explicit BigInt(BigInt&);
+    BigInt();
+    BigInt(BigInt&);
     explicit BigInt(std::string);
     explicit BigInt(int);
 
     static void trimString(std::string&);                   // Удалить символы "удобной записи"
     static bool checkString(std::string);                   // Проверить строку на пригодность (является ли числом)
+    void checkLength();                                     // Изменить длину числа
 
     int getLength();
     int getSize();
@@ -29,11 +31,11 @@ public:
 
     void setValue(std::string);                             // Записать через string
     void setValue(int);                                     // Записать через int
-    void setValue(BigInt&);                                  // Записать через BigInt
+    void setValue(BigInt&);                                 // Записать через BigInt
 
     static int* copyValue(const int*, int);
     void appendValue(int);
-    //void removeValue(int);
+    void shrinkValue();
 
     std::string toString();
 
@@ -48,16 +50,16 @@ public:
     BigInt& operator+=(int right);                          // Прибавить к текущему другой BigInt (через int)
     BigInt operator+(int right);                            // Сложение BigInt и int -> Bigint
     BigInt& operator++();                                   // Префиксный инкремент
-    BigInt operator++(int);                                 // Постфиксный инкремент
+    const BigInt operator++(int);                                 // Постфиксный инкремент
 
-    /* TODO: Вычитание
     BigInt& operator-=(const BigInt& right);
     BigInt operator-(const BigInt& right);
-    BigInt& operator-=(const std::string right);
-    BigInt operator-(const std::string right);
-    BigInt& operator-=(const int right);
-    BigInt operator-(const int right);
-    BigInt operator--();*/
+    BigInt& operator-=(std::string right);
+    BigInt operator-(std::string right);
+    BigInt& operator-=(int right);
+    BigInt operator-(int right);
+    BigInt& operator--();
+    const BigInt operator--(int);
 
     // Операторы сравнения с объектами класса
     bool operator==(const BigInt& right);

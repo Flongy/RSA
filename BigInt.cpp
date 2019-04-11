@@ -39,6 +39,14 @@ bool BigInt::checkString(string s) {
     return true;                // вернуть true, если в строке задано число
 }
 
+void BigInt::checkLength() {
+    // Запись новой длины
+    int number = value[size - 1];
+    length = (size - 1) * 4;
+    while (number != 0) { number /= 10; length++; }
+
+}
+
 int BigInt::getLength() {
     // Вывести количество цифр
     return length;
@@ -51,7 +59,6 @@ int BigInt::getSize() {
 
 void BigInt::setValue(string s) {
     // Записать в value новое значение
-    delete [] value;                                                            // Удалить старый указатель
     trimString(s);
     if (!checkString(s)) {
         cout<<"Указаная строка содержит символ, не являющийся цифрой"<<endl;
@@ -114,7 +121,15 @@ void BigInt::appendValue(int number) {
     }
 }
 
-
+void BigInt::shrinkValue() {
+    // Удалить пустые старшие ячейки value
+    for(int i = size - 1; i >= 0 && value[i] == 0; i--)
+        size--;
+    int *newValue = copyValue(value, size);
+    delete [] value;
+    value = newValue;
+    checkLength();                          // новая длина
+}
 
 string BigInt::toString() {
     // Вывод числа в виде string
@@ -162,11 +177,12 @@ BigInt& BigInt::operator+=(const BigInt& right) {
             value[i] -= 10000;
         }
     }
+    checkLength();
     return *this;
 }
 
 BigInt BigInt::operator+(const BigInt &right) {
-    return (BigInt) (BigInt(*this) += right);
+    return BigInt(*this) += right;
 }
 
 BigInt& BigInt::operator+=(string right) {
@@ -174,26 +190,73 @@ BigInt& BigInt::operator+=(string right) {
 }
 
 BigInt BigInt::operator+(string right) {
-    return (BigInt) (BigInt(*this) += BigInt(std::move(right)));
+    return BigInt(*this) += BigInt(std::move(right));
 }
 
 BigInt& BigInt::operator+=(int right) {
-    *this += BigInt(right);
-    return *this;
+    return *this += BigInt(right);
 }
 
 BigInt BigInt::operator+(int right) {
-    return (BigInt) (BigInt(*this) += BigInt(right));
+    return BigInt(*this) += BigInt(right);
 }
 
 BigInt& BigInt::operator++() {
     return *this += 1;
 }
 
-BigInt BigInt::operator++(int) {
-    BigInt temp = BigInt(*this);
+const BigInt BigInt::operator++(int) {
+    auto temp = BigInt(*this);
     ++*this;
-    return (BigInt) temp;
+    return temp;
+}
+
+BigInt& BigInt::operator-=(const BigInt &right) {
+    // TODO: Нестабильное поведение: иногда большее второе (правое) число считается меньшим
+            // Исправлено?
+    if(*this < right)
+        throw "ERROR: Отрицательное число";
+    else {
+        for (int i = 0; i < right.size; i++) {
+            value[i] -= right.value[i];
+            if (value[i] < 0) {
+                value[i + 1]--;
+                value[i] += 10000;
+            }
+        }
+        shrinkValue();
+    }
+    return *this;
+}
+
+BigInt BigInt::operator-(const BigInt &right) {
+    return BigInt(*this) -= right;
+}
+
+BigInt& BigInt::operator-=(string right) {
+    return *this -= BigInt(right);
+}
+
+BigInt BigInt::operator-(string right) {
+    return BigInt(*this) -= BigInt(right);
+}
+
+BigInt& BigInt::operator-=(int right) {
+    return *this -= BigInt(right);
+}
+
+BigInt BigInt::operator-(int right) {
+    return BigInt(*this) -= BigInt(right);
+}
+
+BigInt& BigInt::operator--() {
+    return *this -= 1;
+}
+
+const BigInt BigInt::operator--(int) {
+    auto temp = BigInt(*this);
+    --*this;
+    return temp;
 }
 
 bool BigInt::operator==(const BigInt &right) {
