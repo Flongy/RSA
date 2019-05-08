@@ -18,6 +18,7 @@ private:
 public:
     BigInt();
     BigInt(BigInt&);
+    BigInt(const BigInt&);
     explicit BigInt(std::string);
     explicit BigInt(int);
 
@@ -32,34 +33,57 @@ public:
     void setValue(std::string);                             // Записать через string
     void setValue(int);                                     // Записать через int
     void setValue(BigInt&);                                 // Записать через BigInt
+    void setValue(const BigInt&);                           // Записать через BigInt
 
     static int* copyValue(const int*, int);
-    void appendValue(int);
-    void shrinkValue();
+    static int* copyValue(const int*, int, int);
+    void appendValue(int);                                  // Добавить к массиву value новую старшую ячейку со значением number
+    void shrinkValue();                                     // Удалить пустые старшие ячейки value
+    void highMinusOne();                                    // Вычесть из самого старшего разряда единицу
+    void pushToBack(int);                                   // Добавить цифру в конец числа
+    void pushToBack(BigInt);                                // Добавить BigInt цифру в конец числа
+    void popFromBack();
+    static int getRatio(int, int);                          // Вычислить коэфициент умножения
+    static BigInt getRatio(BigInt, BigInt);                 // TODO: Вычислить коэфициент умножения BigInt
 
     std::string toString();
+    int toInteger();
 
     BigInt& operator=(BigInt right);                        // Оператор присваивания из BigInt
     BigInt& operator=(std::string right);                   // Оператор присваивания из string
     BigInt& operator=(int right);                           // Оператор присваивания из int
 
     BigInt& operator+=(const BigInt& right);                // Прибавить к текущему другой BigInt
-    BigInt operator+(const BigInt& right);                  // Сложение двух BigInt
+    BigInt operator+(const BigInt& right);                  // Сумма двух BigInt
     BigInt& operator+=(std::string right);                  // Прибавить к текущему другой BigInt (через string)
-    BigInt operator+(std::string right);                    // Сложение BigInt и string -> BigInt
+    BigInt operator+(std::string right);                    // Сумма BigInt и (string -> BigInt)
     BigInt& operator+=(int right);                          // Прибавить к текущему другой BigInt (через int)
-    BigInt operator+(int right);                            // Сложение BigInt и int -> Bigint
+    BigInt operator+(int right);                            // Сумма BigInt и (int -> Bigint)
     BigInt& operator++();                                   // Префиксный инкремент
-    const BigInt operator++(int);                                 // Постфиксный инкремент
+    const BigInt operator++(int);                           // Постфиксный инкремент
 
-    BigInt& operator-=(const BigInt& right);
-    BigInt operator-(const BigInt& right);
-    BigInt& operator-=(std::string right);
-    BigInt operator-(std::string right);
-    BigInt& operator-=(int right);
-    BigInt operator-(int right);
-    BigInt& operator--();
-    const BigInt operator--(int);
+    BigInt& operator-=(const BigInt& right);                // Вычесть из текущего другой BigInt
+    BigInt operator-(const BigInt& right);                  // Разность двух BigInt
+    BigInt& operator-=(std::string right);                  // Вычесть из текущего другой BigInt (через string)
+    BigInt operator-(std::string right);                    // Разность BigInt и (string -> BigInt)
+    BigInt& operator-=(int right);                          // Вычесть из текущего другой BigInt (через int)
+    BigInt operator-(int right);                            // Разность BigInt и (int -> BigInt)
+    BigInt& operator--();                                   // Префиксный инкремент
+    const BigInt operator--(int);                           // Постфиксный инкремент
+
+    BigInt& operator*=(const BigInt& right);                // Умножить на BigInt
+    BigInt operator*(const BigInt& right);                  // Произведение двух BigInt
+    BigInt& operator*=(std::string right);                  // Умножить на BigInt (через string)
+    BigInt operator*(std::string right);                    // Произведение BigInt и (string -> BigInt)
+    BigInt& operator*=(int right);                          // Умножить на BigInt (через int)
+    BigInt operator*(int right);                            // Произведение BigInt и (int -> BigInt)
+
+    BigInt& operator/=(const BigInt& right);                // Разделить на BigInt
+    BigInt operator/(const BigInt& right);                  // Частное двух BigInt
+    BigInt& operator/=(std::string right);                  // Разделить на BigInt (через string)
+    BigInt operator/(std::string right);                    // Частное BigInt и (string -> BigInt)
+    BigInt& operator/=(int right);                          // Разделить на BigInt (через int)
+    BigInt operator/(int right);                            // Частное BigInt и (int -> BigInt)
 
     // Операторы сравнения с объектами класса
     bool operator==(const BigInt& right);
