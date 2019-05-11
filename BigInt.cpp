@@ -152,6 +152,8 @@ void BigInt::shrinkValue() {
     delete [] value;
     value = newValue;
     checkLength();                          // новая длина
+
+    //if(length)
 }
 
 void BigInt::highMinusOne() {
@@ -341,7 +343,9 @@ BigInt& BigInt::operator-=(const BigInt &right) {
             // Исправлено?
     if(*this < right)
         throw "ERROR: Отрицательное число";
-    else {
+    else if(*this == right)
+        *this = 0;
+    else{
         for (int i = 0; i < right.size; i++) {
             value[i] -= right.value[i];
             if (value[i] < 0) {
@@ -423,7 +427,6 @@ BigInt BigInt::operator*(int right) {
 BigInt& BigInt::operator/=(const BigInt &right) {
     if(*this < right)
         setValue(0);
-        //throw "ERROR: Дробное число";
     else {
         BigInt result;
         result = 0;
@@ -442,7 +445,6 @@ BigInt& BigInt::operator/=(const BigInt &right) {
                 *this -= newRightCopy * --ratio;
                 ratioCopy.highMinusOne();
             }
-            //result.pushToBack(ratio.toInteger());
             result += ratioCopy;
         }
         *this = result;
@@ -468,6 +470,66 @@ BigInt& BigInt::operator/=(int right) {
 
 BigInt BigInt::operator/(int right) {
     return BigInt(*this) /= BigInt(right);
+}
+
+BigInt& BigInt::operator%=(const BigInt &right) {
+    if(*this < right)
+        return *this;
+    else {
+        while(*this >= right) {
+            BigInt newRight = right;                // Сделать копию
+            BigInt ratio = BigInt(getRatio((size == 1) ? value[size - 1] : value[size - 1] * 10000 + value[size - 2],
+                    (right.size == 1) ? right.value[right.size - 1] : right.value[right.size - 1] * 10000 + right.value[right.size - 2]));
+            // TODO: Переписать getRatio под BigInt
+            BigInt newRightCopy = newRight;
+            newRight *= ratio;
+            while (newRight.length != length) { newRight *= 10; }    // TODO: Ускорить
+            if (*this >= newRight)
+                *this -= newRight;
+            else
+                *this -= newRightCopy * --ratio;
+        }
+    }
+    return *this;
+}
+
+BigInt BigInt::operator%(const BigInt &right) {
+    return BigInt(*this) %= right;
+}
+
+BigInt& BigInt::operator%=(string right) {
+    return *this %= BigInt(right);
+}
+
+BigInt BigInt::operator%(string right) {
+    return BigInt(*this) %= BigInt(right);
+}
+
+BigInt& BigInt::operator%=(int right) {
+    return *this %= BigInt(right);
+}
+
+BigInt BigInt::operator%(int right) {
+    return BigInt(*this) %= BigInt(right);
+}
+
+BigInt BigInt::Power(BigInt left, BigInt right) {
+    //if(right)
+    if(right == 0)
+        return BigInt(1);
+    if((right % 2) == 1)                    // TODO: Определить четность
+        return Power(left, --right) * left;
+    else
+        return Power(left, right / 2) * Power(left, right / 2);
+}
+
+BigInt BigInt::Power(BigInt left, BigInt right, BigInt mod) {
+    if(right == 0)
+        return BigInt(1);
+    if((right % 2) == 1)                    // TODO: Определить четность
+        return (Power(left, --right) * left) % mod;
+    else
+        return (Power(left, right / 2) * Power(left, right / 2)) % mod;
 }
 
 bool BigInt::operator==(const BigInt &right) {

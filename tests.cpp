@@ -297,6 +297,16 @@ void test_BigInt() {
     if (testBI - testBIRight != 5000 || testBI != 20000)
         cout << "BigInt::operator-() не прошел тест на значениях 20000 - 15000" << endl << "BigInt = " << (testBI - testBIRight).toString() << endl;
 
+    testBI = 20000;
+    testBIRight = 20000;
+    if (testBI - testBIRight != 0 || testBI != 20000)
+        cout << "BigInt::operator-() не прошел тест на значениях 20000 - 20000" << endl << "BigInt = " << (testBI - testBIRight).toString() << endl;
+
+    testBI = 223451111;
+    testBIRight = 123450000;
+    if (testBI - testBIRight != 100001111 || testBI != 223451111)
+        cout << "BigInt::operator-() не прошел тест на значениях 223451111 - 123450000" << endl << "BigInt = " << (testBI - testBIRight).toString() << endl;
+
     testBI = 10000;
     if (testBI - "5000" != 5000 || testBI != 10000)
         cout << "BigInt::operator-() не прошел тест на значениях 10000 - (string) 5000" << endl << "BigInt = " << (testBI - "5000").toString() << endl;
@@ -434,6 +444,79 @@ void test_BigInt() {
     if(testBI / 20 != 50 || testBI != 1000)
         cout << "BigInt::operator/() не прошел тест на значениях 1000 /= (int) 20" << endl << "BigInt = " << (testBI / 20).toString() << endl;
 
+
+    //test operator%=
+    testBI = 99;
+    testBIRight = 10;
+    testBI %= testBIRight;
+    if (testBI != 9)
+        cout << "BigInt::operator%=() не прошел тест на значениях 99 % 10" << endl << "BigInt = " << testBI << endl;
+
+    testBI = 10005;
+    testBIRight = 10;
+    testBI %= testBIRight;
+    if (testBI != 5)
+        cout << "BigInt::operator%=() не прошел тест на значениях 10005 % 10" << endl << "BigInt = " << testBI << endl;
+
+    testBI = 5;
+    testBIRight = 10;
+    testBI %= testBIRight;
+    if (testBI != 5)
+        cout << "BigInt::operator%=() не прошел тест на значениях 5 % 10" << endl << "BigInt = " << testBI << endl;
+
+    testBI = 1342763;
+    testBIRight = 345;
+    testBI %= testBIRight;
+    if (testBI != 23)
+        cout << "BigInt::operator%=() не прошел тест на значениях 1342763 % 345" << endl << "BigInt = " << testBI << endl;
+
+    testBI = 11;
+    testBIRight = 11;
+    testBI %= testBIRight;
+    if (testBI != 0)
+        cout << "BigInt::operator%=() не прошел тест на значениях 11 % 11" << endl << "BigInt = " << testBI << endl;
+
+    testBI = 37;
+    testBI %= "8";
+    if (testBI != 5)
+        cout << "BigInt::operator%=() не прошел тест на значениях 37 % (string) 8" << endl << "BigInt = " << testBI << endl;
+
+    testBI = 37;
+    testBI %= 8;
+    if (testBI != 5)
+        cout << "BigInt::operator%=() не прошел тест на значениях 37 % (int) 8" << endl << "BigInt = " << testBI << endl;
+
+
+    //test operator%
+    testBI = 37;
+    testBIRight = 8;
+    if ((testBI % testBIRight) != 5)
+        cout << "BigInt::operator%() не прошел тест на значениях 37 % 8" << endl << "BigInt = " << testBI << endl;
+
+    testBI = 37;
+    if ((testBI % "8") != 5)
+        cout << "BigInt::operator%() не прошел тест на значениях 37 % (string) 8" << endl << "BigInt = " << testBI << endl;
+
+    testBI = 37;
+    if ((testBI % 8) != 5)
+        cout << "BigInt::operator%() не прошел тест на значениях 37 % (int) 8" << endl << "BigInt = " << testBI << endl;
+
+
+    //test Power
+    testBI = 10;
+    testBIRight = 3;
+    if(BigInt::Power(testBI, testBIRight) != 1000)
+        cout << "BigInt::Power(,) не прошел тест на значениях 10^3" << endl << "BigInt = " << BigInt::Power(testBI, testBIRight).toString() << endl;
+
+    testBI = 3482;
+    testBIRight = 2;
+    if(BigInt::Power(testBI, testBIRight) != 12124324)
+        cout << "BigInt::Power(,) не прошел тест на значениях 3482^2" << endl << "BigInt = " << BigInt::Power(testBI, testBIRight).toString() << endl;
+
+    testBI = 3482;
+    testBIRight = 2;
+    if(BigInt::Power(testBI, testBIRight, BigInt(100)) != 24)
+        cout << "BigInt::Power(,,) не прошел тест на значениях 3482^2 mod 100" << endl << "BigInt = " << BigInt::Power(testBI, testBIRight).toString() << endl;
 
 
     //test operator==

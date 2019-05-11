@@ -85,6 +85,18 @@ public:
     BigInt& operator/=(int right);                          // Разделить на BigInt (через int)
     BigInt operator/(int right);                            // Частное BigInt и (int -> BigInt)
 
+    BigInt& operator%=(const BigInt& right);                // Записать остаток от деления на BigInt
+    BigInt operator%(const BigInt& right);                  // Остаток от деления BigInt
+    BigInt& operator%=(std::string right);                  // Записать остаток от деления на BigInt (через string)
+    BigInt operator%(std::string right);                    // Остаток от деления BigInt и (string -> BigInt)
+    BigInt& operator%=(int right);                          // Записать остаток от деления на BigInt (через int)
+    BigInt operator%(int right);                            // Остаток от деления BigInt и (int -> BigInt)
+
+    static BigInt Power(BigInt, BigInt);
+    static BigInt Power(BigInt, BigInt, BigInt);
+    // BigInt Power(BigInt);
+    // BigInt Power(BigInt, BigInt);
+
     // Операторы сравнения с объектами класса
     bool operator==(const BigInt& right);
     bool operator!=(const BigInt& right);
