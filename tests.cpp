@@ -429,6 +429,11 @@ void test_BigInt() {
     if (testBI != 50)
         cout << "BigInt::operator/=() не прошел тест на значениях 1000 /= (int) 20" << endl << "BigInt = " << testBI << endl;
 
+    testBI = "1 6000 0000 0000";
+    testBI /= "2000 0000";
+    if (testBI != 80000)
+        cout << "BigInt::operator/=() не прошел тест на значениях 1 6000 0000 0000 /= (int) 2000 0000" << endl << "BigInt = " << testBI << endl;
+
 
     //test operator/
     testBI = 1000;

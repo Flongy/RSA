@@ -32,6 +32,7 @@ void BigInt::trimString(string& s) {
     // Убрать из строки символы "удобной записи": ' ', ','
     s.erase(remove(s.begin(), s.end(), ' '), s.end());
     s.erase(remove(s.begin(), s.end(), ','), s.end());
+    s.erase(remove(s.begin(), s.end(), '\n'), s.end());
 }
 
 bool BigInt::checkString(string s) {
@@ -146,6 +147,8 @@ void BigInt::appendValue(int number) {
 
 void BigInt::shrinkValue() {
     // Удалить пустые старшие ячейки value
+    if(length == 1 && value[0] == 0)
+        return;
     for(int i = size - 1; i >= 0 && value[i] == 0; i--)
         size--;
     int *newValue = copyValue(value, size);
@@ -232,8 +235,10 @@ void BigInt::popFromBack() {
 
 int BigInt::getRatio(int a, int b) {
     // Вычислить коэффициент умножения
-    if(a < b || b == 0)
+    if(b == 0)
         return -1;
+
+    while(a < b) b /= 10;
 
     int aLength = 0;
     int aCopy = a;
@@ -242,13 +247,23 @@ int BigInt::getRatio(int a, int b) {
     int bLength = 0;
     int bCopy = b;
     while (bCopy != 0) { bCopy /= 10; bLength++; }
-    while (bLength > 3) { b/= 10; bLength--;}
+    //while (bLength > 3) { b/= 10; bLength--;}
 
-    while(aLength - bLength > 0 && a / b > 10) { a /= 10; aLength--; }
+    while(aLength - bLength > 0 && a / b > 10)
+    { a /= 10; aLength--; }
+
     return a / b;
 }
 
 // TODO: Вычисление коэффициента в BigInt
+
+
+void BigInt::correctValue() {
+    for(int k = 0; k < size; k++) {
+        value[k + 1] += value[k] / 10000;
+        value[k] = value[k] % 10000;
+    }
+}
 
 string BigInt::toString() {
     // Вывод числа в виде string
@@ -294,16 +309,51 @@ BigInt& BigInt::operator=(const int right) {
 }
 
 BigInt& BigInt::operator+=(const BigInt& right) {
-    for(int i = 0; i < min(size, right.size); i++) {
-        value[i] += right.value[i];
-        if (value[i] > 9999) {          // переполнение ячейки
-            if (size < i + 2)
-                appendValue(1);
-            else
-                value[i + 1]++;
-            value[i] -= 10000;
+    int *newValue;
+    if(size < right.size){
+        newValue = new int[right.size]();
+
+        for (int i = size; i < right.size; i++)
+            newValue[i] = right.value[i];
+
+        for(int i = 0; i < size; i++) {
+            newValue[i] += value[i] + right.value[i];
+            if (newValue[i] > 9999) {          // переполнение ячейки
+                newValue[i + 1]++;
+                newValue[i] -= 10000;
+            }
+        }
+        size = right.size;
+    } else if(size == right.size ) {
+        if(size == right.size && value[size - 1] + right.value[size - 1] > 9999)
+            newValue = new int[++size]();
+        else
+            newValue = new int[size]();
+
+        for(int i = 0; i < right.size; i++) {
+            newValue[i] += value[i] + right.value[i];
+            if (newValue[i] > 9999) {          // переполнение ячейки
+                newValue[i + 1]++;
+                newValue[i] -= 10000;
+            }
+        }
+    } else {
+        newValue = new int[size]();
+
+        for (int i = right.size; i < size; i++)
+            newValue[i] = value[i];
+
+        for(int i = 0; i < right.size; i++) {
+            newValue[i] += value[i] + right.value[i];
+            if (newValue[i] > 9999) {          // переполнение ячейки
+                newValue[i + 1]++;
+                newValue[i] -= 10000;
+            }
         }
     }
+    delete [] value;
+    value = newValue;
+    correctValue();
     checkLength();
     return *this;
 }
@@ -358,6 +408,27 @@ BigInt& BigInt::operator-=(const BigInt &right) {
     return *this;
 }
 
+/* Старый -=
+BigInt& BigInt::operator-=(const BigInt &right) {
+    // TODO: Нестабильное поведение: иногда большее второе (правое) число считается меньшим
+            // Исправлено?
+    if(*this < right)
+        throw "ERROR: Отрицательное число";
+    else if(*this == right)
+        *this = 0;
+    else{
+        for (int i = 0; i < right.size; i++) {
+            value[i] -= right.value[i];
+            if (value[i] < 0) {
+                value[i + 1]--;
+                value[i] += 10000;
+            }
+        }
+        shrinkValue();
+    }
+    return *this;
+}*/
+
 BigInt BigInt::operator-(const BigInt &right) {
     return BigInt(*this) -= right;
 }
@@ -397,9 +468,11 @@ BigInt& BigInt::operator*=(const BigInt &right) {
             newValue[i + j + 1] += res / 10000;
         }
     }
+
     delete [] value;
     size = size + right.size + 1;
     value = newValue;
+    correctValue();
     shrinkValue();
     return *this;
 }
@@ -428,7 +501,7 @@ BigInt& BigInt::operator/=(const BigInt &right) {
     if(*this < right)
         setValue(0);
     else {
-        BigInt result;
+        BigInt result = BigInt(0);
         result = 0;
         while(*this >= right) {
             BigInt newRight = right;                // Сделать копию
@@ -442,13 +515,18 @@ BigInt& BigInt::operator/=(const BigInt &right) {
             if (*this >= newRight)
                 *this -= newRight;
             else {
-                *this -= newRightCopy * --ratio;
-                ratioCopy.highMinusOne();
+                *this -= (newRight/10);
+                ratioCopy /= 10;
+                //*this -= newRightCopy * --ratio;
+                //ratioCopy.highMinusOne();
             }
             result += ratioCopy;
+
         }
         *this = result;
+
     }
+
     return *this;
 }
 
@@ -487,7 +565,7 @@ BigInt& BigInt::operator%=(const BigInt &right) {
             if (*this >= newRight)
                 *this -= newRight;
             else
-                *this -= newRightCopy * --ratio;
+                *this -= (newRight/10);
         }
     }
     return *this;
@@ -514,22 +592,22 @@ BigInt BigInt::operator%(int right) {
 }
 
 BigInt BigInt::Power(BigInt left, BigInt right) {
-    //if(right)
     if(right == 0)
         return BigInt(1);
+    // cout << left << " Степень: " << right << endl;
     if((right % 2) == 1)                    // TODO: Определить четность
         return Power(left, --right) * left;
     else
-        return Power(left, right / 2) * Power(left, right / 2);
+        return Power(left * left, right /= 2);
 }
 
 BigInt BigInt::Power(BigInt left, BigInt right, BigInt mod) {
     if(right == 0)
         return BigInt(1);
     if((right % 2) == 1)                    // TODO: Определить четность
-        return (Power(left, --right) * left) % mod;
+        return (Power(left, --right, mod) * left) % mod;
     else
-        return (Power(left, right / 2) * Power(left, right / 2)) % mod;
+        return (Power((left * left) % mod, right /= 2, mod)) % mod;
 }
 
 bool BigInt::operator==(const BigInt &right) {

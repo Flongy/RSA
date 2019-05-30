@@ -13,7 +13,8 @@ private:
     int length = 0;                 // количество цифр
     int size = 0;                   // размер value
     int *value = nullptr;           // число
-    /* Пример: BigInt("123456789") => value[2]:1 value[1]:2345 value[0]:6789 */
+    // TODO: bool sign = false;              // знак числа
+    /* Пример: BigInt("1 2345 6789") => value[2]:1 value[1]:2345 value[0]:6789 */
 
 public:
     BigInt();
@@ -45,6 +46,7 @@ public:
     void popFromBack();
     static int getRatio(int, int);                          // Вычислить коэфициент умножения
     static BigInt getRatio(BigInt, BigInt);                 // TODO: Вычислить коэфициент умножения BigInt
+    void correctValue();
 
     std::string toString();
     int toInteger();
@@ -124,6 +126,8 @@ public:
     // Операторы работы с потоками
     friend std::ostream& operator<<(std::ostream&, BigInt& bigInt);
     friend std::istream& operator>>(std::istream&, BigInt& bigInt);
+
+
 };
 
 
