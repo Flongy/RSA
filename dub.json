@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"Flongy"
+	],
+	"copyright": "Copyright © 2019, Flongy",
+	"description": "D language simple RSA implementation.",
+	"license": "MIT",
+	"name": "RSA"
+}
