@@ -13,6 +13,7 @@ class BigInt {
     static const ulong mask = ulong.max >> 32;
     static const ulong imask = ulong.max << 32;
     static const ulong dmask = mask + 1;
+    static const ulong char_mask = (1 << 8) - 1;
 
     static const ulong[] low_primes = [3, 5, 7, 11, 13, 17, 19, 23];
 
@@ -112,8 +113,33 @@ class BigInt {
         res.value.length = cells;
         foreach(ref item; res.value)
             item = uniform(0, mask);
-
+        res.correct_size();
         return res;
+    }
+
+    /// Создать BigInt из пользовательского текста
+    static BigInt newText(const string str) {
+        const ulong size = cast(ulong)(ceil(str.length / 4f));  // Количество ячеек, включая неполную (по четыре символа в ячейке)
+        ulong[] res = new ulong[size];
+
+        ulong fulls = str.length / 4;
+        foreach(i, c; str) {
+            res[i >> 2] += cast(ulong)(c) << 8 * (i % 4);
+        }
+        return new BigInt(res);
+    }
+
+    /// Вывести содержимое в виде текста
+    string dumpText() const {
+        char[] res = new char[size * 4];
+        // TODO: сделать подкласс Текст, сделать этот цикл красивее и более гибким
+        foreach(i, item; value) {
+            res[(i << 2) + 0] = item & char_mask;
+            res[(i << 2) + 1] = (item >> 8) & char_mask;
+            res[(i << 2) + 2] = (item >> 16) & char_mask;
+            res[(i << 2) + 3] = (item >> 24) & char_mask;
+        }
+        return cast(string)(res);
     }
 
     /// Перенос переполненных ячеек в старшие
@@ -186,13 +212,12 @@ class BigInt {
         if (this == other) return 0;
         else {
             if (this.size == other.size) {
-                for (ulong i = size; i > 0; ++i) {
-                    if (value[i - 1] > other.value[i - 1])
-                    // this > other
+                for (long i = size - 1; i >= 0; --i) {
+                    if (value[i] > other.value[i])      // this > other
                         return sign ? -1 : 1;
-                    else
-                    // this < other
+                    else if (value[i] < other.value[i]) // this < other
                         return sign ? 1 : -1;
+                    // Если значения старших ячеек равны, то перейти к следующей
                 }
             } else if (this.sign < other.sign || (this.size > other.size && !sign) || (this.size < other.size && sign)) return 1;
             else return -1;
@@ -338,16 +363,17 @@ class BigInt {
         } else if (sign != osign) {
             this += num;
         } else if (num > 0) {
-            if (value[0] == 0) {
+            if (value[0] < num) {
                 ulong j = 1;
                 value[0] += dmask;
-                for (; value[j] == 0; ++j)
+
                 // Занять из старших разрядов, пока не будет найден ненулевой разряд
+                for (; value[j] == 0; ++j)
                     value[j] += dmask;
+
                 value[1..j+1] -= 1;
             }
             value[0] -= num;
-            correct_size();
             //oneshift();
             correct_size();
         }
@@ -380,7 +406,7 @@ class BigInt {
         }
         return this;
     }
-    /// Операция умножения с присваиванием ulong
+    /// Операция умножения с присваиванием long
     BigInt mulAssign(const long other) {
         if (other == 0)
             setZero();
@@ -395,7 +421,7 @@ class BigInt {
     /// Битовый сдвиг вправо
     BigInt rBitShiftAssign(const ulong other) {
         // TODO: Сдвиг > 32 бит
-        assert (other <= 32, "Сдвиг на "~text( other)~" не входит в интервал '0..32'");
+        assert (other <= 32, "Сдвиг на "~text(other)~" не входит в интервал '0..32'");
         if (other == 32) {
             if (size > 1) {
                 --size;
@@ -409,7 +435,7 @@ class BigInt {
             carry[] = value[1..$] & shift_mask;
             value[] /= 2 ^^ other;
             value[0..$-1] += carry[] * 2 ^^ (32 - other);
-            destroy( carry);
+            destroy(carry);
             correct_size();
         }
         return this;
@@ -458,16 +484,18 @@ class BigInt {
     /// Получение остатка от деления на other
     BigInt mod(const BigInt other) const {
         assert (!other.isZero, "Деление на 0");
-        assert(other.isPositive, "Получение остатка от деления на отрицательное число не реализовано");
+        assert(other.isPositive, "Получение остатка от деления на отрицательное число не реализовано"); // TODO
         if (this == other || other.isOne) {
             return new BigInt(0);
         } else if (!sign && this < other) {
             return new BigInt( this);
+        } else if (sign && this.inv < other) {
+            return other + this;
         } else {
             BigInt remainder = new BigInt();
             for (long i = size * 32 - 1; i >= 0; --i) {
                 remainder <<= 1;
-                remainder.setLowBit( this.getBit( i));
+                remainder.setLowBit(this.getBit(i));
                 if (remainder >= other)
                     remainder -= other;
             }
@@ -499,12 +527,12 @@ class BigInt {
     /// Возведение в степень по модулю
     static BigInt powMod(const BigInt left, const BigInt right, const BigInt modulo) {
         if (right.isZero)
-            return new BigInt( 1);
+            return new BigInt(1);
         if (right.isOne)
-            return new BigInt(left);
+            return new BigInt(left) % modulo;
 
         if (right.isOdd)
-            return (powMod( left, (right - 1), modulo) * left) % modulo;
+            return (powMod(left, (right - 1), modulo) * left) % modulo;
         else
             return powMod((left * left) % modulo, right >> 1, modulo) % modulo;
     }
@@ -543,38 +571,38 @@ class BigInt {
         return value[0] & 1;
     }
 
+    /// Является ли число единицей
     bool isOne() const {
-        /* Является ли число единицей */
         return !sign && size == 1 && value[0] == 1;
     }
+    /// Присвоить числу единицу
     BigInt setOne() {
-        /* Присвоить числу единицу */
         sign = false;
         size = 1;
         value = [ 1];
         return this;
     }
+    /// Является ли число нулем
     bool isZero() const {
-        /* Является ли число нулем */
         return size == 1 && value[0] == 0;
     }
+    /// Обнулить число
     BigInt setZero() {
-        /* Обнулить число */
         sign = false;
         size = 1;
         value = new ulong[size];
         return this;
     }
 
+    /// Получить значение бита в разряде num в числе
     bool getBit(const ulong num) const {
-        /* Получить значение бита в разряде num в числе */
         const auto cell = num / 32;
         assert (cell < size, "Диапазон возможных бит: [0.."~text( size * 32 - 1)~"], передано: "~text( num));
         return (value[cell] >> (num % 32)) & 1;
     }
 
+    /// Установить бит в разряде num в значение bit
     void setBit(const ulong num, const bool bit) {
-        /* Установить бит в разряде num в значение bit */
         const auto cell = num / 32;
         const auto bit_mask = 1 << (num % 32) & mask;
         if (cell >= size && bit) {
@@ -587,8 +615,8 @@ class BigInt {
                 value[cell] &= ~bit_mask;
     }
 
+    /// Установить младший бит
     void setLowBit(const bool bit) {
-        /* Установить младший бит */
         if(bit)
             value[0] |= bit;
         else
@@ -609,7 +637,7 @@ class BigInt {
     }
 
     /// Проверка, является ли число простым
-    bool isPrime() {
+    bool isPrime() const {
         return isPrime(mr_tests);
     }
 
@@ -800,6 +828,8 @@ unittest {
 /// Проверка класса BigInt с несколькими ячейками
 unittest {
     BigInt num = BigInt.randomCells(8);
+    if(num.size < 8)
+        writeln("Неверный размер при randomCells: ", num);
     assert(num.size == 8);
 
     BigInt number1 = new BigInt("0x9010 fa00 23ab");
@@ -819,5 +849,9 @@ unittest {
     assert((number1 / number2) == 0x269AB);
     assert((number1 % number2) == 0x3098_4314);
     assert(BigInt.powMod(number1, number2, number2) == 0x3579_5215);
+
+    assert(new BigInt("0x0005818e 136961ca 09976068") % new BigInt("0x00000559 65d2e6dd") == 0x6bc89abc);
+    assert(new BigInt("0x00000559 80c50d8c") > new BigInt("0x00000559 65d2e6dd"));
+
 }
 
