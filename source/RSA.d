@@ -59,7 +59,6 @@ class RSA {
         return BigInt.powMod(data, sk, pk);
     }
 
-
     /// Создать новую пару ключей по двум простым числам p и q
     static RSA generate(const BigInt p, const BigInt q) {
         BigInt N = p * q;
@@ -68,7 +67,6 @@ class RSA {
         assert(d !is null);
         return new RSA(N, d);
     }
-
 
 
     /*
@@ -86,11 +84,30 @@ class RSA {
 
 
 unittest {
-    RSA cipher1 = RSA.generate(new BigInt("0x4977c970792f309cdafac771"), new BigInt("0x12fe5633ca465bac1527ab47"));
+    RSA cipher1 = RSA.generate(new BigInt(49_789), new BigInt(74_771));
     RSA cipher2 = new RSA(cipher1.pk);
 
-    //BigInt random_data = new BigInt(0x6bc89abc);
-    BigInt random_data = BigInt.randomCells(3);
+    BigInt random_data = BigInt.randomCells(1);
+
     BigInt cipher_text = cipher2.encrypt(random_data);
     assert(cipher1.decrypt(cipher_text) == random_data);
+
+
+    cipher1 = RSA.generate(new BigInt(1_001_467), new BigInt(5_872_903));
+    cipher2 = new RSA(cipher1.pk);
+
+    cipher_text = cipher2.encrypt(random_data);
+    assert(cipher1.decrypt(cipher_text) == random_data);
+
+    random_data = BigInt.randomCells(3);
+    string text_data = "Hi!";
+
+    cipher1 = RSA.generate(new BigInt("0x4977c970792f309cdafac771"), new BigInt("0x12fe5633ca465bac1527ab47"));
+    cipher2 = new RSA(cipher1.pk);
+
+    cipher_text = cipher2.encrypt(random_data);
+    assert(cipher1.decrypt(cipher_text) == random_data);
+
+    cipher_text = cipher2.encrypt(BigInt.newText(text_data));
+    assert(cipher1.decrypt(cipher_text).dumpText[0..text_data.length] == text_data); // TODO: автоматически высчитывать длину результата
 }

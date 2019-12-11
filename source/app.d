@@ -25,16 +25,16 @@ void main()
     const BigInt prime3 = new BigInt("0x90a7c97a79253f9cdbfacb9b");
     const BigInt prime4 = new BigInt("0xb0125073b1283fabdbf96b47");
 
+    string s = "Hello, github!";
 
-    string s = "Hello, world!";
-    writefln("%d", s[0]);
     sw.start();
-    //writeln(RSA.generate(prime1, prime2));
+    string t = BigInt.newText(s).dumpText;
     sw.stop();
-    writeln(prime1, " является простым: ", prime1.isPrime);
-    writeln(prime2, " является простым: ", prime2.isPrime);
-    writeln(prime3, " является простым: ", prime3.isPrime);
-    writeln(prime4, " является простым: ", prime4.isPrime);
+    writeln(t);
+    //writeln(prime1, " является простым: ", prime1.isPrime);
+    //writeln(prime2, " является простым: ", prime2.isPrime);
+    //writeln(prime3, " является простым: ", prime3.isPrime);
+    //writeln(prime4, " является простым: ", prime4.isPrime);
     writeln("time = ", sw.peek.total!"nsecs", " ", sw.peek.total!"usecs" / 1_000_000f);
     sw.reset();
 }
