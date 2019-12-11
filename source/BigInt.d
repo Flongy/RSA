@@ -16,106 +16,97 @@ class BigInt {
 
     static const ulong[] low_primes = [3, 5, 7, 11, 13, 17, 19, 23];
 
-    ulong[] value;      /// Значение числа. Младшие элементы правее в числе
+    ulong[] value;   /// Значение числа. Младшие элементы правее в числе
     ulong[] carry;      // for shifting
 
-    size_t size;                    /// Количество элементов
+    size_t size = 1;                /// Количество элементов
     bool sign = false;              /// Знак числа: false - положительное, true - отрицательное
 
     public:
-    static ulong mr_tests = 15;     /// Количество итераций теста Миллера-Рабина
+    static ulong mr_tests = 20;     /// Количество итераций теста Миллера-Рабина
 
     /// Пустой конструктор
     this() {
+        sign = false;
         size = 1;
         value = new ulong[size];
     }
-    this(int num) {
-        sign = sgn(num) < 0;
-        this( cast(ulong) abs( num));
-    }
-    this(uint num) {
-        this( cast(ulong) num);
-    }
-    this(long num) {
-        sign = sgn(num) < 0;
-        this( cast(ulong) abs( num));
-    }
-    this(ulong num) {
+    this(const long num) {
         this();
-        value[0] = num;
+        sign = sgn(num) < 0;
+        value[0] = abs(num);
         this.oneshift();
     }
     /// Конструктор числа BigInt из строковой записи
-    this(string str) {
+    this(const string str) {
         ubyte base = 10;            // Основание числа в строке
         ubyte char_num = 10;        // Количество символов при разделении строки
 
         // Удаление вспомогательных символов
-        str = str.replace("_", "").replace(" ", "").replace(",", "");
+        auto snum = str.replace("_", "").replace(" ", "").replace(",", "");
 
-        if (str[0] == '-') {
-            str = str[1..$];
+        if (snum[0] == '-') {
+            snum = snum[1..$];
             sign = true;
-        } else if (str[1] == '+') {
-            str = str[1..$];
+        } else if (snum[1] == '+') {
+            snum = snum[1..$];
             sign = false;
         }
 
-        if (str[0..2] == "0x") {
+        if (snum[0..2] == "0x") {
             // Шестнадцатиричная запись
-            str = str[2..$];
+            snum = snum[2..$];
             base = 16;
             char_num = 8;
-        } else if (str[0..2] == "0b") {
+        } else if (snum[0..2] == "0b") {
             // Двоичная запись
-            str = str[2..$];
+            snum = snum[2..$];
             base = 2;
             char_num = 32;
         }
 
         // Количество символов (без последней ячейки, если она не полная - меньше чем char_num)
-        immutable auto fulls_len = str.length - str.length % char_num;
+        immutable auto fulls_len = snum.length - snum.length % char_num;
 
-        size = cast(ulong)(ceil( str.length / cast(float)(char_num)));
+        size = cast(ulong)(ceil( snum.length / cast(float)(char_num)));  // Количество ячеек, включая неполную
         value = new ulong[size];
 
-        string t;   // Временная переменная для перевода ячеек str в ulong
+        string t;   // Временная переменная для перевода ячеек snum в ulong
 
         // Ячейки по char_num символов переводятся в ulong
         for (auto i = 0; i < fulls_len; i += char_num) {
-            t = str[$ - i - char_num..$ - i];
+            t = snum[$ - i - char_num..$ - i];
             value[i/char_num] = parse!ulong( t, base);
         }
 
         // Если была неполная ячейка
-        if (str.length > fulls_len) {
-            t = str[0..$ - fulls_len];
-            value[$-1] = parse!ulong( t, base);
+        if (snum.length > fulls_len) {
+            t = snum[0..$ - fulls_len];
+            value[$-1] = parse!ulong(t, base);
         }
 
         this.oneshift();    // Перенос переполненных ячеек
     }
     /// Конструктор на основе массива
-    this(ulong[] arr) {
+    this(const ulong[] arr) {
         size = arr.length;
         value = new ulong[size];
         value[] = arr[];
     }
     /// Копировать BigInt
-    this(BigInt binum) {
+    this(const BigInt binum) {
         sign = binum.sign;
         this(binum.value);
     }
 
     /// Деструктор
     ~this() {
-        destroy( value);
-        destroy( carry);
+        destroy(value);
+        destroy(carry);
     }
 
     /// Сгенерировать случайный BigInt из cells ячеек
-    static BigInt randomCells(ulong cells) {
+    static BigInt randomCells(const ulong cells) {
         BigInt res = new BigInt();
         res.size = cells;
         res.value.length = cells;
@@ -163,29 +154,23 @@ class BigInt {
     }
 
     /// Проверка равенства
-    override bool opEquals(Object other) const {
+    override bool opEquals(const Object other) const {
         return this.opEquals( cast(BigInt)(other));
     }
     /// BigInt == BigInt
-    bool opEquals(BigInt other) const {
+    bool opEquals(const BigInt other) const {
         return this.sign == other.sign && this.size == other.size && this.value == other.value;
     }
-    ///// BigInt == ulong
-    //bool opEquals(ulong other) const {
-    //    if (other > mask)
-    //        return this == new BigInt( other);
-    //    return size > 1 || value[0] == other;
-    //}
     /// BigInt == long
-    bool opEquals(long other) const {
-        bool osign = (sgn(other) < 0);
-        other = abs(other);
-        if (other > mask)
-            return this == new BigInt( other);
-        return size > 1 || (value[0] == other && sign == osign);
+    bool opEquals(const long other) const {
+        const ulong num = abs(other);           /// Модуль второго числа
+        if (num > mask)   /// Число больше максимального значения ячейки => занимает две ячейки => перевести в BigInt
+            return this == new BigInt(other);
+        const bool osign = (sgn(other) < 0);    /// Знак второго числа: false - "+", true - "-"
+        return size == 1 && value[0] == num && sign == osign;
     }
     /// BigInt == string
-    bool opEquals(string other) const {
+    bool opEquals(const string other) const {
         return this == new BigInt(other);
     }
     /// Равенство двух BigInt
@@ -193,11 +178,11 @@ class BigInt {
         return a.sign == b.sign && a.value == b.value;
     }
 
-    override int opCmp(Object other) const {
+    override int opCmp(const Object other) const {
         return this.opCmp( cast(BigInt)(other));
     }
     /// Сравнение чисел BigInt - BigInt
-    int opCmp(BigInt other) const {
+    int opCmp(const BigInt other) const {
         if (this == other) return 0;
         else {
             if (this.size == other.size) {
@@ -215,34 +200,26 @@ class BigInt {
         }
         assert(0);
     }
-    /// Сравнение чисел BigInt - ulong
-    //int opCmp(ulong other) const {
-    //    if (other > mask)
-    //        return this.opCmp( new BigInt( other));
-    //    if (this == other && !sign) return 0;
-    //    else if (size > 1 || (value[0] > other && !sign))   return 1;   // BigInt > num
-    //    else return -1;  // BigInt < num
-    //}
     /// Сравнение чисел BigInt - long
-    int opCmp(long other) const {
-        if (other > mask)
+    int opCmp(const long other) const {
+        const ulong num = abs(other);
+        if (num > mask)
             return this.opCmp( new BigInt( other));
 
-        bool osign = (sgn(other) < 0);
-        other = abs(other);
+        const bool osign = (sgn(other) < 0);
 
-        if (this == other && sign == osign) return 0;
-        else if (size > 1 || (value[0] > other && sign == osign))   return 1;   // BigInt > num
+        if (this == num && sign == osign) return 0;
+        else if (size > 1 || (value[0] > num && sign == osign))   return 1;   // BigInt > num
         else return -1;  // BigInt < num
     }
     /// Сравнение чисел BigInt - string
-    int opCmp(string other) const {
+    int opCmp(const string other) const {
         return this.opCmp(new BigInt(other));
     }
 
 
     /// Унарные операции
-    BigInt opUnary(string op)() {
+    BigInt opUnary(const string op)() {
         if (op == "++") {
             // Инкремент
             return this += 1;
@@ -253,16 +230,16 @@ class BigInt {
     }
 
     /// Бинарные операции с присваиванием
-    BigInt opOpAssign(string op)(BigInt other) {
-        if (op == "+") return addAssign( other);     // Сложение
-        else if (op == "-") return subAssign( other);     // Сложение
-        else if (op == "*") return mulAssign( other);     // Умножение
+    BigInt opOpAssign(const string op)(const BigInt other) {
+        if (op == "+") return addAssign(other);     // Сложение
+        else if (op == "-") return subAssign(other);     // Сложение
+        else if (op == "*") return mulAssign(other);     // Умножение
         //else if (op == "^^") return powAssign(other);     // Возведение в степень
         else assert(0, "Operator "~op~" not implemented");
     }
 
     /// Бинарные операции с присваиванием для ulong
-    BigInt opOpAssign(string op)(ulong other) {
+    BigInt opOpAssign(const string op)(const ulong other) {
         if (op == "+") return addAssign( other);                // Сложение
         else if (op == "-") return subAssign( other);           // Сложение
         else if (op == "*") return mulAssign( other);           // Умножение
@@ -272,7 +249,7 @@ class BigInt {
     }
 
     /// Операция сложения с присваиванием
-    BigInt addAssign(BigInt other) {
+    BigInt addAssign(const BigInt other) {
         if (this.sign == other.sign) {
             if (other.size > size) {
                 size = other.size;
@@ -289,33 +266,31 @@ class BigInt {
         return this;
     }
     /// Операция сложения с присваиванием ulong
-    BigInt addAssign(long other) {
-        if (other > mask)
-            return this += new BigInt( other);
-
+    BigInt addAssign(const long other) {
+        const ulong num = abs(other);
+        if (num > mask)
+            return this += new BigInt(other);
         const bool osign = (sgn(other) < 0);
-        other = abs(other);
+
         if (osign == this.sign) {
-            value[0] += other;
+            value[0] += num;
             oneshift();
             //correct_size();
         } else {
-            this -= other;
+            this -= num;
         }
         return this;
     }
 
     /// Операция вычитания с присваиванием
-    BigInt subAssign(BigInt other) {
+    BigInt subAssign(const BigInt other) {
         if (other.isZero) return this;
 
         if (this == other) {
             setZero();
-        } else if (this.sign == other.sign) {
+        } else if (this.sign == other.getSign) {
             ulong j;
             if((sign && this < other) || (!sign && this > other)) {
-                //writeln((sign && this < other), (!sign && this > other));
-                //writeln(this.sign ? "-" : "", this.value, other.sign ? " -" : " ", other.value);
                 for(int i = 0; i < other.size; ++i) {
                     if(value[i] < other.value[i]) {
                         value[i] += dmask;
@@ -327,59 +302,42 @@ class BigInt {
                 }
             } else if((sign && this > other) || (!sign && this < other)) {
                 sign = !sign;
-                if (size < other.size) {
-                    this.value.length = other.size;
-                }
-                for(int i = 0; i < other.size; ++i) {
-                    if(value[i] > other.value[i]) {
-                        writeln(value, " ", other.value);
-                        other.value[i] += dmask;
-                        for (j = 1; other.value[i + j] == 0; ++j)
-                            other.value[i + j] += dmask;
-                        other.value[i+1..i+j+1] -= 1;
+                ulong[] ovalue = new ulong[other.size];
+                ovalue[] = other.value[];
+                for(ulong i = 0; i < size; ++i) {
+                    if(value[i] > ovalue[i]) {
+                        ovalue[i] += dmask;
+                        for (j = 1; ovalue[i + j] == 0; ++j)
+                            ovalue[i + j] += dmask;
+                        ovalue[i+1..i+j+1] -= 1;
                     }
-                    value[i] = other.value[i] - value[i];
+                    ovalue[i] -= value[i];
                 }
-                if (size < other.size) {
-                    value[this.size..$] = other.value[this.size..$];
-                    this.size = other.size;
-                }
+                size = other.size;
+                value = ovalue;
             } else {
-                assert(0, "HELP");
+                assert(0);
             }
             correct_size();
             oneshift();
-        } else if (this.sign != other.sign) {
+        } else {
             this += other.inv;
-        } else if (!other.isZero) {
-            ulong j;
-            foreach (i, item; other.value) {
-                if (item > value[i]) {
-                    value[i] += dmask;
-                    for (j = 1; value[i + j] == 0; ++j)
-                        value[i + j] += dmask;
-                    value[i+1..i+j+1] -= 1;
-                }
-                value[i] -= item;
-            }
-            //oneshift();
-            correct_size();
         }
         return this;
     }
     /// Операция вычитания с присваиванием long
-    BigInt subAssign(long other) {
-        if (other > mask)
-            return this -= new BigInt( other);
+    BigInt subAssign(const long other) {
+        const ulong num = abs(other);
+        if (num > mask)
+            return this -= new BigInt(other);
         const bool osign = (sgn(other) < 0);
-        other = abs(other);
 
-        if (size == 1 && value[0] <= other && sign == osign) {
+        if (size == 1 && value[0] <= num && sign == osign) {
             sign = !sign;
-            value[0] = other - value[0];
+            value[0] = num - value[0];
         } else if (sign != osign) {
-            this += other;
-        } else if (other > 0) {
+            this += num;
+        } else if (num > 0) {
             if (value[0] == 0) {
                 ulong j = 1;
                 value[0] += dmask;
@@ -388,7 +346,7 @@ class BigInt {
                     value[j] += dmask;
                 value[1..j+1] -= 1;
             }
-            value[0] -= other;
+            value[0] -= num;
             correct_size();
             //oneshift();
             correct_size();
@@ -397,7 +355,7 @@ class BigInt {
     }
 
     /// Операция умножения с присваиванием
-    BigInt mulAssign(BigInt other) {
+    BigInt mulAssign(const BigInt other) {
         if (other.isZero) {
             setZero();
         } else {
@@ -423,21 +381,19 @@ class BigInt {
         return this;
     }
     /// Операция умножения с присваиванием ulong
-    BigInt mulAssign(long other) {
+    BigInt mulAssign(const long other) {
         if (other == 0)
             setZero();
         else {
             sign = sign ^ (sgn(other) < 0);
-            other = abs(other);
-
-            value[0..size] *= other;
+            value[0..size] *= abs(other);
             oneshift();
         }
         return this;
     }
 
     /// Битовый сдвиг вправо
-    BigInt rBitShiftAssign(ulong other) {
+    BigInt rBitShiftAssign(const ulong other) {
         // TODO: Сдвиг > 32 бит
         assert (other <= 32, "Сдвиг на "~text( other)~" не входит в интервал '0..32'");
         if (other == 32) {
@@ -459,14 +415,14 @@ class BigInt {
         return this;
     }
     /// Битовый сдвиг влево
-    BigInt lBitShiftAssign(ulong other) {
+    BigInt lBitShiftAssign(const ulong other) {
         value[] *= 2 ^^ other;
         oneshift();
         return this;
     }
 
     /// Получение результата деления на other
-    BigInt div(BigInt other) {
+    BigInt div(const BigInt other) const {
         assert (!other.isZero, "Деление на 0");
         if(other.isOne) {
             auto temp = new BigInt(this);
@@ -489,7 +445,7 @@ class BigInt {
                 }
                 return quotient;
             case 0:
-                auto temp = new BigInt( this);
+                auto temp = new BigInt(this);
                 temp.sign = this.sign ^ other.sign;
                 return temp;
             case -1:
@@ -500,9 +456,14 @@ class BigInt {
     }
 
     /// Получение остатка от деления на other
-    BigInt mod(BigInt other) {
+    BigInt mod(const BigInt other) const {
         assert (!other.isZero, "Деление на 0");
-        if (this > other || this.sign) {
+        assert(other.isPositive, "Получение остатка от деления на отрицательное число не реализовано");
+        if (this == other || other.isOne) {
+            return new BigInt(0);
+        } else if (!sign && this < other) {
+            return new BigInt( this);
+        } else {
             BigInt remainder = new BigInt();
             for (long i = size * 32 - 1; i >= 0; --i) {
                 remainder <<= 1;
@@ -512,22 +473,22 @@ class BigInt {
             }
             return sign ? other - remainder : remainder;
         }
-        return new BigInt( this);
+        assert(0);
     }
 
     /// Остаток от деления на ulong
-    BigInt mod(ulong other) {
+    BigInt mod(const long other) const {
         assert (other > 0, "Деление на 0");
         return this % new BigInt(other);
     }
 
     /// Возведение числа в степень
-    static BigInt pow(BigInt left, BigInt right) {
+    static BigInt pow(const BigInt left, const BigInt right) {
         assert(!right.sign);
         if (right.isZero)
             return new BigInt( 1);
         if (right.isOne)
-            return left;
+            return new BigInt(left);
 
         if (right.isOdd)
             return (left ^^ (right - 1)) * left;
@@ -536,42 +497,42 @@ class BigInt {
     }
 
     /// Возведение в степень по модулю
-    static BigInt powMod(BigInt left, BigInt right, BigInt modulo) {
+    static BigInt powMod(const BigInt left, const BigInt right, const BigInt modulo) {
         if (right.isZero)
             return new BigInt( 1);
         if (right.isOne)
-            return left;
+            return new BigInt(left);
 
         if (right.isOdd)
             return (powMod( left, (right - 1), modulo) * left) % modulo;
         else
-            return (powMod( (left * left) % modulo, right >> 1, modulo)) % modulo;
+            return powMod((left * left) % modulo, right >> 1, modulo) % modulo;
     }
 
     /// Бинарные операции BigInt - BigInt
-    BigInt opBinary(string op)(BigInt other) {
+    BigInt opBinary(const string op)(const BigInt other) const {
         if (op == "+") return new BigInt( this) += other;       // Сложение
         else if (op == "-") return new BigInt( this) -= other;  // Сложение
         else if (op == "*") return new BigInt( this) *= other;  // Умножение
         else if (op == "/") return div(other);                  // Деление
         else if (op == "%") return mod(other);                  // Остаток от деления
-        else if (op == "^^") return pow( this, other);          // Возведение в степень
+        else if (op == "^^") return pow(this, other);          // Возведение в степень
         else assert(0, "Operator "~op~" not implemented");
     }
 
     /// Бинарные операции BigInt - ulong
-    BigInt opBinary(string op)(ulong other) {
-        if (op == "+") return new BigInt( this) += other;           // Сложение
-        else if (op == "-") return new BigInt( this) -= other;      // Сложение
-        else if (op == "*") return new BigInt( this) *= other;      // Умножение
-        else if (op == "%") return mod(other);                      // Остаток от деления
-        else if (op == ">>") return new BigInt( this) >>= other;    // Сдвиг вправо
-        else if (op == "<<") return new BigInt( this) <<= other;    // Сдвиг влево
+    BigInt opBinary(const string op)(const long other) const {
+        if (op == "+") return new BigInt(this) += other;           // Сложение
+        else if (op == "-") return new BigInt(this) -= other;      // Сложение
+        else if (op == "*") return new BigInt(this) *= other;      // Умножение
+        else if (op == "%") return mod(other);                     // Остаток от деления
+        else if (op == ">>") return new BigInt(this) >>= other;    // Сдвиг вправо
+        else if (op == "<<") return new BigInt(this) <<= other;    // Сдвиг влево
         else assert(0, "Operator "~op~" not implemented");
     }
 
     /// Число с обратным знаком
-    BigInt inv() {
+    BigInt inv() const {
         BigInt cp = new BigInt(this);
         cp.sign = !sign;
         return cp;
@@ -605,14 +566,14 @@ class BigInt {
         return this;
     }
 
-    bool getBit(ulong num) const {
+    bool getBit(const ulong num) const {
         /* Получить значение бита в разряде num в числе */
         const auto cell = num / 32;
         assert (cell < size, "Диапазон возможных бит: [0.."~text( size * 32 - 1)~"], передано: "~text( num));
         return (value[cell] >> (num % 32)) & 1;
     }
 
-    void setBit(ulong num, bool bit) {
+    void setBit(const ulong num, const bool bit) {
         /* Установить бит в разряде num в значение bit */
         const auto cell = num / 32;
         const auto bit_mask = 1 << (num % 32) & mask;
@@ -626,7 +587,7 @@ class BigInt {
                 value[cell] &= ~bit_mask;
     }
 
-    void setLowBit(bool bit) {
+    void setLowBit(const bool bit) {
         /* Установить младший бит */
         if(bit)
             value[0] |= bit;
@@ -635,7 +596,7 @@ class BigInt {
     }
 
     /// Проверка, является ли число простым
-    bool isPrime(ulong tests) {
+    bool isPrime(const ulong tests) const {
         if (!isOdd)
             return false;
 
@@ -653,7 +614,7 @@ class BigInt {
     }
 
     /// Тест Миллера-Рабина на простоту числа. k - точность (количество итераций)
-    bool miller_rabin(ulong k) {
+    bool miller_rabin(const ulong k) const {
         const BigInt oneLess = new BigInt(this) - 1;
         BigInt d = this - 1;
         while ((d % 2).isZero)
@@ -688,26 +649,22 @@ class BigInt {
     }
 
     /// Поиск следующего простого числа
-    BigInt nextPrime(ulong tests) {
-        if (isPrime(tests))
-            return this;
-        else {
-            BigInt next;
-            if(isOdd)
-                next = new BigInt(this);
-            else
-                next = this + 1;
+    BigInt nextPrime(const ulong tests) const {
+        BigInt next;
+        if(isOdd)
+            next = new BigInt(this);
+        else
+            next = this + 1;
 
-            while(true)
-                if(next.isPrime(tests))
-                    return next;
-                else
-                    next += 2;
-        }
+        while(true)
+            if(next.isPrime(tests))
+                return next;
+            else
+                next += 2;
     }
 
     /// Поиск следующего простого числа
-    BigInt nextPrime() {
+    BigInt nextPrime() const {
         return nextPrime(mr_tests);
     }
 
@@ -737,26 +694,26 @@ class BigInt {
     }*/
 
     /// Шетнадцатиричное представление числа
-    string hex() {
+    string hex() const {
         string res = sign ? "-0x" : "0x";
-        for (auto i = size; i > 0; --i)
+        for (ulong i = size; i > 0; --i)
             res ~= format!"%08x "( value[i-1]);
         return res;
     }
 
     /// Двоичное представление числа
-    string bin() {
+    string bin() const {
         string res = sign ? "-0b" : "0b";
-        for (auto i = size; i > 0; --i)
+        for (ulong i = size; i > 0; --i)
             res ~= format!"%032b "( value[i-1]);
         return res;
     }
 
-    override string toString() {
+    override string toString() const {
         return hex();
     }
 
-    string toString(bool in_hex) {
+    string toString(bool in_hex) const {
         if (in_hex)
             return hex();
         else
@@ -824,7 +781,7 @@ unittest {
 
     assert((number1 + number2) == 36);
     assert((number1 + number2.inv) == 26);
-    assert(number1 + -20 == 11);
+    assert((number1 + -20) == 11);
     assert((number1 - number2) == 26);
     assert((number2 - number1) == -26);
     assert(((number2 - number1) - number2) == -31);
