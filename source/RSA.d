@@ -4,9 +4,7 @@ import std.stdio;
 import bigint;
 
 class RSA {
-    private:
     const BigInt sk = null;  /// Закрытый ключ
-    public:
     const BigInt pk = null;  /// Открытый ключ
     static const BigInt e = new BigInt(65_537);
 
@@ -53,10 +51,19 @@ class RSA {
         return BigInt.powMod(data, e, pk);
     }
 
+    /// Шифрование данных по открытому ключу
+    BigText encryptText(const BigInt data) const {
+        return new BigText(encrypt(data));
+    }
+
     /// Расшифровка шифротекста
     BigInt decrypt(const BigInt data) const {
         assert(sk !is null, "Закрытый ключ не был получен");
         return BigInt.powMod(data, sk, pk);
+    }
+    /// Расшифровка шифротекста
+    BigText decryptText(const BigInt data) const {
+        return new BigText(decrypt(data));
     }
 
     /// Создать новую пару ключей по двум простым числам p и q
@@ -88,6 +95,7 @@ unittest {
     RSA cipher2 = new RSA(cipher1.pk);
 
     BigInt random_data = BigInt.randomCells(1);
+    while (random_data > cipher2.pk) random_data = BigInt.randomCells(1);
 
     BigInt cipher_text = cipher2.encrypt(random_data);
     assert(cipher1.decrypt(cipher_text) == random_data);
@@ -99,15 +107,16 @@ unittest {
     cipher_text = cipher2.encrypt(random_data);
     assert(cipher1.decrypt(cipher_text) == random_data);
 
-    random_data = BigInt.randomCells(3);
-    string text_data = "Hi!";
 
     cipher1 = RSA.generate(new BigInt("0x4977c970792f309cdafac771"), new BigInt("0x12fe5633ca465bac1527ab47"));
     cipher2 = new RSA(cipher1.pk);
 
+    random_data = BigInt.randomCells(3);
+    while (random_data > cipher2.pk) random_data = BigInt.randomCells(3);
+    string text_data = "Hi!";
+
     cipher_text = cipher2.encrypt(random_data);
     assert(cipher1.decrypt(cipher_text) == random_data);
-
-    cipher_text = cipher2.encrypt(BigInt.newText(text_data));
-    assert(cipher1.decrypt(cipher_text).dumpText[0..text_data.length] == text_data); // TODO: автоматически высчитывать длину результата
+    cipher_text = cipher2.encrypt(new BigText(text_data));
+    assert(cipher1.decrypt(cipher_text) == new BigText(text_data));
 }

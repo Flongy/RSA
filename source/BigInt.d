@@ -1,11 +1,12 @@
 module bigint;
 
 import std.stdio;
-import std.conv : parse, text;
+import std.conv : parse, text, emplace;
 import std.math : ceil, abs, sgn;
 import std.string : format;
 import std.array : replace;
 import std.random : uniform;
+import std.file : readText, write, isFile, remove, FileException;
 
 /// Класс BigInt - числа произвольной длины
 class BigInt {
@@ -13,14 +14,13 @@ class BigInt {
     static const ulong mask = ulong.max >> 32;
     static const ulong imask = ulong.max << 32;
     static const ulong dmask = mask + 1;
-    static const ulong char_mask = (1 << 8) - 1;
 
     static const ulong[] low_primes = [3, 5, 7, 11, 13, 17, 19, 23];
 
     ulong[] value;   /// Значение числа. Младшие элементы правее в числе
     ulong[] carry;      // for shifting
 
-    size_t size = 1;                /// Количество элементов
+    ulong size = 1;                /// Количество элементов
     bool sign = false;              /// Знак числа: false - положительное, true - отрицательное
 
     public:
@@ -44,7 +44,7 @@ class BigInt {
         ubyte char_num = 10;        // Количество символов при разделении строки
 
         // Удаление вспомогательных символов
-        auto snum = str.replace("_", "").replace(" ", "").replace(",", "");
+        auto snum = str.replace("_", "").replace(" ", "").replace(",", "").replace("\n", "");
 
         if (snum[0] == '-') {
             snum = snum[1..$];
@@ -117,31 +117,6 @@ class BigInt {
         return res;
     }
 
-    /// Создать BigInt из пользовательского текста
-    static BigInt newText(const string str) {
-        const ulong size = cast(ulong)(ceil(str.length / 4f));  // Количество ячеек, включая неполную (по четыре символа в ячейке)
-        ulong[] res = new ulong[size];
-
-        ulong fulls = str.length / 4;
-        foreach(i, c; str) {
-            res[i >> 2] += cast(ulong)(c) << 8 * (i % 4);
-        }
-        return new BigInt(res);
-    }
-
-    /// Вывести содержимое в виде текста
-    string dumpText() const {
-        char[] res = new char[size * 4];
-        // TODO: сделать подкласс Текст, сделать этот цикл красивее и более гибким
-        foreach(i, item; value) {
-            res[(i << 2) + 0] = item & char_mask;
-            res[(i << 2) + 1] = (item >> 8) & char_mask;
-            res[(i << 2) + 2] = (item >> 16) & char_mask;
-            res[(i << 2) + 3] = (item >> 24) & char_mask;
-        }
-        return cast(string)(res);
-    }
-
     /// Перенос переполненных ячеек в старшие
     void shift() {
         carry[] = (value[0..$-1] & imask) / dmask;
@@ -197,7 +172,7 @@ class BigInt {
     }
     /// BigInt == string
     bool opEquals(const string other) const {
-        return this == new BigInt(other);
+        return this == new typeof(this)(other);
     }
     /// Равенство двух BigInt
     static bool opEquals(BigInt a, BigInt b) {
@@ -239,7 +214,7 @@ class BigInt {
     }
     /// Сравнение чисел BigInt - string
     int opCmp(const string other) const {
-        return this.opCmp(new BigInt(other));
+        return this.opCmp(new typeof(this)(other));
     }
 
 
@@ -716,16 +691,33 @@ class BigInt {
         return size;
     }
 
+    /// Загрузить число из файла
+    static BigInt fromFile(const string fileName) {
+        return new BigInt(fileName.readText);
+    }
 
-    /*override size_t toHash() {
-        // todo
-    }*/
+    /// Сохранить число в файле
+    void toFile(const string fileName) const {
+        fileName.write(hex(false));
+    }
 
     /// Шетнадцатиричное представление числа
     string hex() const {
         string res = sign ? "-0x" : "0x";
         for (ulong i = size; i > 0; --i)
             res ~= format!"%08x "( value[i-1]);
+        return res;
+    }
+
+    /// Шетнадцатиричное представление числа. divide - разделять ли ячейки пробелами
+    string hex(bool divide) const {
+        string res = sign ? "-0x" : "0x";
+        if(divide)
+            for (ulong i = size; i > 0; --i)
+                res ~= format!"%08x "( value[i-1]);
+        else
+            for (ulong i = size; i > 0; --i)
+                res ~= format!"%08x"( value[i-1]);
         return res;
     }
 
@@ -748,6 +740,69 @@ class BigInt {
             return bin();
     }
 
+}
+
+class BigText : BigInt {
+    private:
+    static const ulong char_mask = (1 << 8) - 1;    /// Маска для одного (однобайтового) символа
+
+    ulong length = 0;   /// Количество символов (подъячеек)
+
+    public:
+    /// Создать BigInt из пользовательского текста
+    this(const string str) {
+        length = str.length;
+        size = calcSize(length);  // Количество ячеек, включая неполную (по четыре символа в ячейке)
+        value = new ulong[size];
+
+        ulong fulls = length / 4;
+        foreach(i, c; str) {
+            value[i >> 2] += cast(ulong)(c) << (8 * (i % 4));
+        }
+    }
+
+    this(const string str, bool isBigInt) {
+        if(isBigInt)
+            super(str);
+        else
+            this(str);
+    }
+
+    this(const BigInt binum) {
+        super(binum);
+    }
+
+    static ulong calcSize(ulong n) {
+        return cast(ulong)(ceil(n / 4f));
+    }
+
+    ulong calcLength() {
+        length = size * 4;
+        for(long i = length - 1; i >= 0; --i) {
+            if (!(value[i>>2] & (char_mask << 8 * (i%4))))
+                --length;
+            else
+                break;
+        }
+        return length;
+    }
+
+    string toString() {
+        calcLength();
+        char[] res = new char[length];
+        foreach(i, ref c; res) {
+            c = (value[i>>2] >> 8*(i%4)) & char_mask;
+        }
+        return cast(string)(res);
+    }
+
+    override string toString() const {
+        char[] res = new char[length];
+        foreach(i, ref c; res) {
+            c = (value[i>>2] >> 8*(i%4)) & char_mask;
+        }
+        return cast(string)(res);
+    }
 }
 
 /// Проверка класса BigInt с одной ячейкой
@@ -832,6 +887,22 @@ unittest {
         writeln("Неверный размер при randomCells: ", num);
     assert(num.size == 8);
 
+    string f = "BigInt";
+    while(true)
+        try {
+            (f~".test").isFile;
+            f ~= uniform!"[]"('A', 'Z');
+        } catch (FileException e) {
+            break;
+        } finally {
+            f ~= ".test";
+        }
+
+    num.toFile(f);
+    assert(num == BigInt.fromFile(f));
+    f.remove;
+
+
     BigInt number1 = new BigInt("0x9010 fa00 23ab");
     BigInt number2 = new BigInt(0x3BB5_B0C5);
 
@@ -852,6 +923,5 @@ unittest {
 
     assert(new BigInt("0x0005818e 136961ca 09976068") % new BigInt("0x00000559 65d2e6dd") == 0x6bc89abc);
     assert(new BigInt("0x00000559 80c50d8c") > new BigInt("0x00000559 65d2e6dd"));
-
 }
 
